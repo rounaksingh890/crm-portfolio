@@ -1,0 +1,83 @@
+/* ============================================================================
+   MOBILE — structural responsive changes. Loaded last so it wins.
+   ========================================================================== */
+
+/* ---- tablets and down -------------------------------------------------- */
+@media (max-width: 1080px) {
+  .detail { grid-template-columns: 280px minmax(0,1fr); }
+  .detail .d-col:last-child { grid-column: 1 / -1; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  /* top nav collapses to burger + logo + search + portal switch */
+  .tn-menu { display: none; }
+  .tn-burger { display: flex; }
+  .tn-search-btn { min-width: 0; }
+  .tn-search-btn span, .tn-search-btn kbd { display: none; }
+  .tn-search-btn { border: 0; background: none; padding: 9px; }
+  .tn-search-btn svg { width: 18px; height: 18px; }
+
+  .inbox { grid-template-columns: 1fr; }
+  .inbox > .hide-m { display: none; }
+}
+
+/* ---- phones -------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .page { padding: 18px 14px 96px; }
+  .page-head h1 { font-size: 19px; }
+  .ph-actions { width: 100%; margin-left: 0; }
+  .toolbar .inp { max-width: none; flex: 1 1 160px; }
+  .count-note { width: 100%; margin-left: 0; }
+
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  /* !important so it also beats the inline column layouts some record pages set */
+  .detail { grid-template-columns: 1fr !important; }
+  .detail .d-col:last-child { grid-column: auto; }
+
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .kpi-val { font-size: 19px; }
+
+  .msg { max-width: 92%; }
+
+  .bottomnav { display: flex; }
+
+  /* board: narrower columns, taller scroll area */
+  .bcol { flex-basis: 236px; max-height: 62vh; }
+
+  /* responsive tables: header row hidden, cells stack as labeled rows */
+  .tbl-wrap.rsp { overflow-x: visible; }
+  .rsp .tbl thead { display: none; }
+  .rsp .tbl, .rsp .tbl tbody, .rsp .tbl tr, .rsp .tbl td { display: block; width: 100%; }
+  .rsp .tbl tr { padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+  .rsp .tbl tr:last-child { border-bottom: 0; }
+  .rsp .tbl td { padding: 2px 0; border: 0; }
+  .rsp .tbl td.td-num { text-align: left; }
+  .rsp .tbl td[data-th] { display: flex; gap: 10px; align-items: baseline; }
+  .rsp .tbl td[data-th]::before {
+    content: attr(data-th);
+    flex: 0 0 108px;
+    font: 600 10.5px/1.8 var(--font);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rsp .tbl td.cell-main-td { padding-bottom: 6px; }
+
+  .fs-row { grid-template-columns: 76px 1fr 60px; }
+  .stagebar { gap: 3px; }
+  .sb-step { flex-basis: 46%; border-radius: var(--r-sm); }
+  .sb-step:first-child, .sb-step:last-child { border-radius: var(--r-sm); }
+
+  .tour-tip { left: 14px !important; right: 14px; width: auto; }
+
+  .hero { padding-top: 40px; }
+  .feat .card, .about-sec .card { padding: 22px 18px; }
+  .cov-stats { gap: 14px; }
+}
+
+@media (max-width: 380px) {
+  .kpis { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .kpi { padding: 11px 12px; }
+  .tn-logo span { display: none; }
+}

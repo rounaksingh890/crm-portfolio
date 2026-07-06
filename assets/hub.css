@@ -1,0 +1,150 @@
+/* CRM Portfolio hub — the one page that ties the three samples together.
+   Light, editorial, self-contained. Each piece keeps its own accent color. */
+
+:root {
+  --ink: #1d2b3a;
+  --ink-2: #46586a;
+  --muted: #7d8ea0;
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --border: #e4e9ee;
+  --line: #eef2f5;
+  --font: 'Hanken Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-head: 'Newsreader', Georgia, serif;
+  --r: 16px;
+  --shadow: 0 1px 2px rgba(29, 43, 58, .05), 0 14px 40px -18px rgba(29, 43, 58, .18);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body { font: 400 16px/1.6 var(--font); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+svg { display: block; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3 { font-family: var(--font-head); font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---- top bar ------------------------------------------------------------ */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 16px;
+  padding: 13px clamp(16px, 4vw, 44px);
+  background: rgba(246, 248, 250, .9); backdrop-filter: blur(9px);
+  border-bottom: 1px solid var(--line);
+}
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 16px; }
+.badge {
+  margin-left: auto; padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  background: #fff6e4; color: #8a6116; border: 1px solid #f0dcae; font-size: 12.5px; font-weight: 600;
+}
+
+/* ---- hero ---------------------------------------------------------------- */
+.hero { max-width: 940px; margin: 0 auto; padding: clamp(48px, 8vw, 96px) 20px 20px; text-align: center; }
+.kicker { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #ff7a59; }
+.hero h1 { font-size: clamp(32px, 6vw, 58px); line-height: 1.08; margin: 16px 0 20px; font-weight: 600; }
+.hero .lede { max-width: 65ch; margin: 0 auto; color: var(--ink-2); font-size: clamp(16px, 2vw, 18px); }
+.hero-hints {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px;
+  margin-top: 26px; font-size: 14px; font-weight: 600; color: var(--ink-2);
+}
+.hero-hints span { display: inline-flex; align-items: center; gap: 7px; }
+.hero-scroll {
+  display: inline-block; margin-top: 30px; padding: 10px 20px;
+  border: 1.5px solid var(--border); border-radius: 999px; font-weight: 600; font-size: 14.5px;
+  color: var(--ink-2); background: var(--card); transition: border-color .15s, color .15s;
+}
+.hero-scroll:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ---- flow strip ---------------------------------------------------------- */
+.flow {
+  max-width: 940px; margin: 40px auto 0; padding: 0 20px;
+  display: flex; align-items: stretch; justify-content: center; gap: 8px; flex-wrap: wrap;
+}
+.flow-step {
+  flex: 1 1 200px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  box-shadow: var(--shadow); padding: 16px 18px; display: grid; gap: 3px; align-content: start;
+}
+.fnum {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--c); color: #fff; font-weight: 700; font-size: 14px; margin-bottom: 5px;
+}
+.flow-step b { font-family: var(--font-head); font-size: 18px; }
+.flow-step span { font-size: 13.5px; color: var(--ink-2); }
+.flow-arrow { align-self: center; color: var(--muted); font-size: 22px; font-weight: 300; }
+
+/* ---- pieces -------------------------------------------------------------- */
+.pieces { max-width: 1080px; margin: 0 auto; padding: clamp(36px, 6vw, 60px) 20px 10px; display: grid; gap: 22px; }
+.piece {
+  display: grid; grid-template-columns: 300px 1fr;
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  box-shadow: var(--shadow); overflow: hidden;
+  transition: transform .16s, box-shadow .16s;
+}
+.piece:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(29,43,58,.06), 0 24px 54px -22px rgba(29,43,58,.28); }
+.piece:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.p-art { position: relative; overflow: hidden; min-height: 240px; background: color-mix(in srgb, var(--accent) 12%, #fff); display: grid; place-items: center; }
+.p-body { padding: 26px 30px; display: grid; gap: 10px; align-content: center; }
+.p-tag { font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.p-body h2 { font-size: clamp(22px, 3vw, 27px); }
+.p-body p { color: var(--ink-2); font-size: 15px; max-width: 62ch; }
+.p-stats { display: flex; gap: 24px; margin-top: 6px; flex-wrap: wrap; }
+.p-stats b { display: block; font-family: var(--font-head); font-size: 26px; color: var(--ink); line-height: 1; }
+.p-stats span { font-size: 12.5px; color: var(--muted); }
+.p-cta { margin-top: 8px; font-weight: 700; font-size: 15px; color: var(--accent); }
+.piece:hover .p-cta { text-decoration: underline; }
+
+/* cover art: verticals — four labelled quadrants around a CRM core */
+.art-verticals .chip {
+  position: absolute; font-size: 12px; font-weight: 700; color: #b5461f;
+  background: #fff; border: 1px solid #ffd9cc; border-radius: 999px; padding: 5px 11px; box-shadow: var(--shadow);
+}
+.chip-tl { top: 30px; left: 26px; } .chip-tr { top: 30px; right: 26px; }
+.chip-bl { bottom: 30px; left: 26px; } .chip-br { bottom: 30px; right: 26px; }
+.art-core {
+  font-family: var(--font-head); font-weight: 700; font-size: 30px; color: #fff;
+  width: 92px; height: 92px; border-radius: 24px; display: grid; place-items: center;
+  background: linear-gradient(135deg, #ff7a59, #ff9a7f); box-shadow: 0 14px 30px -10px rgba(255,122,89,.6);
+}
+
+/* cover art: migration — messy sheet → clean cards */
+.art-migration { gap: 14px; }
+.mig-sheet { display: grid; grid-template-columns: repeat(2, 34px); grid-auto-rows: 20px; gap: 4px; }
+.mig-sheet i { background: #fff; border: 1px solid #cfe0d6; border-radius: 3px; }
+.mig-sheet i.bad { background: #fdeef1; border-color: #eeb6c2; }
+.mig-arrow { color: #2e7d5b; font-size: 26px; font-weight: 700; }
+.mig-cards { display: grid; gap: 8px; }
+.mig-cards b { display: block; width: 78px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #2e7d5b, #47a37c); box-shadow: 0 8px 18px -8px rgba(46,125,91,.6); }
+
+/* cover art: onboarding — progress ring + task rows */
+.ob-ring { width: 128px; height: 128px; }
+.ob-bg { fill: none; stroke: #dfe3f4; stroke-width: 11; }
+.ob-fg { fill: none; stroke: #4553c2; stroke-width: 11; stroke-linecap: round; stroke-dasharray: 179 289; transform: rotate(-90deg); transform-origin: center; }
+.ob-pct { font-family: var(--font-head); font-weight: 700; font-size: 26px; fill: #333f9e; }
+.ob-rows { position: absolute; bottom: 26px; display: grid; gap: 6px; }
+.ob-rows i { width: 96px; height: 12px; border-radius: 999px; background: #fff; border: 1px solid #d7dcf2; }
+.ob-rows i.on { background: #4553c2; border-color: #4553c2; }
+
+/* ---- about ---------------------------------------------------------------- */
+.about { max-width: 1080px; margin: 0 auto; padding: 36px 20px; }
+.about-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: clamp(24px, 4vw, 40px); }
+.about-card h2 { font-size: clamp(21px, 3vw, 26px); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.about-card p { margin-top: 14px; color: var(--ink-2); max-width: 82ch; }
+.about-card .pill { font-family: var(--font); font-size: 12px; font-weight: 700; color: #b5461f; background: #fff1ec; border: 1px solid #ffd9cc; border-radius: 999px; padding: 3px 11px; }
+.fine { font-size: 13px; color: var(--muted); }
+
+/* ---- footer --------------------------------------------------------------- */
+.foot {
+  max-width: 1080px; margin: 0 auto; padding: 30px 20px 60px;
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
+}
+
+/* ---- phones --------------------------------------------------------------- */
+@media (max-width: 800px) {
+  .flow-arrow { transform: rotate(90deg); }
+  .piece { grid-template-columns: 1fr; }
+  .p-art { min-height: 190px; }
+}
+@media (max-width: 460px) {
+  .badge { display: none; }
+  .p-stats { gap: 16px; }
+}

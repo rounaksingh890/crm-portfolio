@@ -1,0 +1,7 @@
+# OS / editor cruft — the site itself is plain static files with no build output
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+.idea/

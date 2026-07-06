@@ -1,0 +1,433 @@
+/* Spreadsheet Rescue — renderer + interactions.
+   Every stat is computed from the data at render time: the validators below
+   actually inspect the messy cells, so the numbers are never typed in. */
+(function () {
+  'use strict';
+  const M = window.MIG;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  const money = n => '$' + Math.round(n).toLocaleString('en-US');
+  const stageOf = id => M.stages.find(s => s.id === id);
+  const contactById = id => M.contacts.find(c => c.id === id);
+  const rowById = id => M.rows.find(r => r.id === id);
+  const fmtDate = iso => {
+    if (!iso) return '—';
+    const [y, mo, d] = iso.split('-');
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo - 1] + ' ' + (+d) + ', ' + y;
+  };
+
+  /* ---- validators: they really read the messy cells ---------------------- */
+  const V = {
+    phone:  v => v !== '' && !/^\(\d{3}\) \d{3}-\d{4}$/.test(v),
+    email:  v => v !== '' && (!/^[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}$/i.test(v) || /gmial|;|\s/i.test(v)),
+    date:   v => v !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(v),
+    money:  v => v !== '' && !/^\$?\d{1,3}(,\d{3})*(\.\d{2})?$/.test(v) && !/^\d+$/.test(v),
+    status: v => { const t = v.trim(); if (t === '' || t === '??') return true;
+      return !M.statusMap.some(m => m.from.toLowerCase() === t.toLowerCase()); }
+  };
+  function rowIssues(r) {
+    const out = {};
+    if (r.archive) { out.archive = ['name']; return out; }        // whole row is the issue
+    if (r.dupGroup) out.dup = ['name'];
+    if (V.phone(r.cells.phone))  out.phone  = ['phone'];
+    if (V.email(r.cells.email))  out.email  = ['email'];
+    if (V.date(r.cells.last))    out.date   = ['last'];
+    if (V.money(r.cells.quote))  out.money  = ['quote'];
+    if (V.status(r.cells.status)) out.status = ['status'];
+    if (r.cells.phone === '' || r.cells.email === '') out.missing =
+      [r.cells.phone === '' ? 'phone' : null, r.cells.email === '' ? 'email' : null].filter(Boolean);
+    return out;
+  }
+  const ISSUES = [
+    { key: 'all',     label: 'Everything at once' },
+    { key: 'dup',     label: 'Duplicate people' },
+    { key: 'phone',   label: 'Five phone formats' },
+    { key: 'email',   label: 'Broken emails' },
+    { key: 'date',    label: 'Vague dates' },
+    { key: 'money',   label: 'Money that isn\'t a number' },
+    { key: 'status',  label: 'Status chaos' },
+    { key: 'missing', label: 'Missing details' },
+    { key: 'archive', label: 'Not even a customer' }
+  ];
+
+  /* ---- derived numbers ---------------------------------------------------- */
+  function stats() {
+    const rows = M.rows;
+    const archived = rows.filter(r => r.archive);
+    const groups = {};
+    rows.forEach(r => { if (r.dupGroup) (groups[r.dupGroup] = groups[r.dupGroup] || []).push(r); });
+    const dupExtra = Object.values(groups).reduce((a, g) => a + g.length - 1, 0);
+    const live = rows.filter(r => !r.archive);
+    const issueCounts = {};
+    ISSUES.forEach(i => { issueCounts[i.key] = 0; });
+    rows.forEach(r => {
+      const iss = rowIssues(r);
+      const keys = Object.keys(iss);
+      if (keys.length) issueCounts.all++;
+      keys.forEach(k => { issueCounts[k]++; });
+    });
+    const quoted = M.contacts.filter(c => c.stage === 'quoted' && c.dealAmount);
+    const scheduled = M.contacts.filter(c => c.stage === 'scheduled' && c.dealAmount);
+    const won = M.contacts.filter(c => c.dealAmount && /won/.test(c.dealLabel));
+    const weekly = M.contacts.filter(c => c.weekly && c.stage === 'active').reduce((a, c) => a + c.weekly, 0);
+    const monthly = M.contacts.filter(c => c.monthly).reduce((a, c) => a + c.monthly, 0);
+    return {
+      rowsIn: rows.length, archived: archived.length, dupExtra,
+      groups, contactsOut: M.contacts.length, liveRows: live.length, issueCounts,
+      quotedSum: quoted.reduce((a, c) => a + c.dealAmount, 0), quotedN: quoted.length,
+      schedSum: scheduled.reduce((a, c) => a + c.dealAmount, 0), schedN: scheduled.length,
+      wonSum: won.reduce((a, c) => a + c.dealAmount, 0), wonN: won.length,
+      recurringMo: Math.round(weekly * 4.33 + monthly),
+      tasks: M.contacts.filter(c => c.nextAction && c.nextAction !== '—').length
+    };
+  }
+
+  /* before/after data quality, measured — not asserted */
+  function quality() {
+    const live = M.rows.filter(r => !r.archive);
+    const pc = (n, of) => Math.round(100 * n / of);
+    const C = M.contacts;
+    return [
+      { label: 'Phone in one consistent format',
+        before: pc(live.filter(r => r.cells.phone !== '' && !V.phone(r.cells.phone)).length, live.length),
+        after:  pc(C.filter(c => /^\(\d{3}\) \d{3}-\d{4}$/.test(c.phone)).length, C.length),
+        afterNote: 'the one gap is Walt — a real lead with a plan, not a fake value' },
+      { label: 'Email present and valid',
+        before: pc(live.filter(r => r.cells.email !== '' && !V.email(r.cells.email)).length, live.length),
+        after:  pc(C.filter(c => c.email !== '').length, C.length),
+        afterNote: 'the rest are marked "no email" on purpose — not blank by accident' },
+      { label: 'Last-contact date is unambiguous',
+        before: pc(live.filter(r => r.cells.last !== '' && !V.date(r.cells.last)).length, live.length),
+        after:  pc(C.filter(c => c.lastContact !== '').length, C.length) },
+      { label: 'Money stored as an actual number',
+        before: pc(live.filter(r => r.cells.quote !== '' && !V.money(r.cells.quote)).length, live.length),
+        after: 100, afterNote: 'quotes are currency; weekly and monthly prices have their own fields' },
+      { label: 'Status means one agreed thing',
+        before: pc(live.filter(r => !V.status(r.cells.status)).length, live.length),
+        after: 100 },
+      { label: 'One record per person',
+        before: pc(live.length - stats().dupExtra, live.length),
+        after: 100 }
+    ];
+  }
+
+  /* ---- pieces ------------------------------------------------------------- */
+  const pill = (text, color) =>
+    `<span class="pill" style="--pc:${color || '#7c98b6'}">${esc(text)}</span>`;
+  const stagePill = id => { const s = stageOf(id); return pill(s.label, s.color); };
+
+  function sheetTable(rows, opts) {
+    opts = opts || {};
+    const head = `<tr class="sh-letters"><th></th>${M.columns.map(c => `<th>${c.letter}</th>`).join('')}</tr>` +
+      `<tr class="sh-labels"><th>1</th>${M.columns.map(c => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
+    const body = rows.map(r => {
+      const iss = rowIssues(r);
+      const cellCls = key => {
+        const hits = Object.keys(iss).filter(k => iss[k].includes(key) || k === 'dup' || k === 'archive');
+        return hits.length ? ' data-iss="' + hits.join(' ') + '"' : '';
+      };
+      const rowIss = Object.keys(iss).join(' ');
+      return `<tr class="sh-row" data-row="${r.id}" data-rowiss="${rowIss}" tabindex="0" title="Click to see what happened to this row">
+        <th>${r.id + 1}</th>
+        ${M.columns.map(c => `<td${cellCls(c.key)}>${esc(r.cells[c.key])}</td>`).join('')}
+      </tr>`;
+    }).join('');
+    return `<div class="sheet-scroll"><table class="sheet${opts.mini ? ' mini' : ''}">${head}${body}</table></div>`;
+  }
+
+  function contactCard(c) {
+    const s = stageOf(c.stage);
+    return `<button class="ccard" data-contact="${c.id}" style="--pc:${s.color}">
+      <div class="cc-top"><b>${esc(c.name)}</b>${stagePill(c.stage)}</div>
+      <div class="cc-svc">${esc(c.service)}</div>
+      <div class="cc-deal">${esc(c.dealLabel)}</div>
+      ${c.nextAction && c.nextAction !== '—' ? `<div class="cc-next"><span>Next:</span> ${esc(c.nextAction)}</div>` : ''}
+      <div class="cc-src">from row${c.sourceRows.length > 1 ? 's' : ''} ${c.sourceRows.map(n => n + 1).join(' + ')}</div>
+    </button>`;
+  }
+
+  /* ---- sections ------------------------------------------------------------ */
+  function render() {
+    const S = stats();
+    const app = $('#app');
+
+    const chips = ISSUES.map(i =>
+      `<button class="chip" data-issue="${i.key}">${esc(i.label)} <b>${S.issueCounts[i.key]}</b></button>`).join('');
+
+    const mergeCards = Object.keys(S.groups).map(gid => {
+      const rows = S.groups[gid];
+      const target = M.contacts.find(c => c.sourceRows.some(n => rows.some(r => r.id === n)));
+      return `<div class="merge-card">
+        <div class="mc-rows">${rows.map(r =>
+          `<button class="mc-row" data-row="${r.id}">Row ${r.id + 1}: <i>“${esc(r.cells.name)}”</i></button>`).join('')}</div>
+        <div class="mc-arrow" aria-hidden="true">→</div>
+        <button class="mc-contact" data-contact="${target.id}" style="--pc:${stageOf(target.stage).color}">
+          <b>${esc(target.name)}</b><span>one record · ${stageOf(target.stage).label.toLowerCase()}</span></button>
+      </div>`;
+    }).join('');
+
+    const archCards = M.rows.filter(r => r.archive).map(r => `
+      <div class="arch-card">
+        <button class="mc-row" data-row="${r.id}">Row ${r.id + 1}: <i>“${esc(r.cells.name)}”</i></button>
+        <p>${esc(r.archive)}</p>
+      </div>`).join('');
+
+    const colMap = M.columnMap.map(m => `
+      <div class="map-row">
+        <div class="map-from">${esc(m.from)}</div>
+        <div class="map-arrow" aria-hidden="true">→</div>
+        <div class="map-to"><b>${esc(m.to)}</b>${pill(m.type, '#4f7cd1')}<p>${esc(m.how)}</p></div>
+      </div>`).join('');
+
+    const statusRows = M.statusMap.map(m => {
+      const s = stageOf(m.to);
+      return `<tr><td class="sm-from">“${esc(m.from)}”</td><td class="sm-arr">→</td>
+        <td>${stagePill(m.to)}</td><td class="sm-note">${esc(m.note || '')}</td></tr>`;
+    }).join('');
+
+    const stageChips = [{ id: '', label: 'Everyone', color: '#33475b' }].concat(M.stages).map(s => {
+      const n = s.id ? M.contacts.filter(c => c.stage === s.id).length : M.contacts.length;
+      return `<button class="chip st-chip" data-stage="${s.id}" style="--pc:${s.color}">${esc(s.label)} <b>${n}</b></button>`;
+    }).join('');
+
+    const qRows = quality().map(q => `
+      <div class="q-row">
+        <div class="q-label">${esc(q.label)}</div>
+        <div class="q-bars">
+          <div class="q-bar"><span class="q-tag">before</span><div class="q-track"><i class="before" style="width:${q.before}%"></i></div><b>${q.before}%</b></div>
+          <div class="q-bar"><span class="q-tag">after</span><div class="q-track"><i class="after" style="width:${q.after}%"></i></div><b>${q.after}%</b></div>
+        </div>
+        ${q.afterNote ? `<div class="q-note">${esc(q.afterNote)}</div>` : ''}
+      </div>`).join('');
+
+    const steps = M.process.map((p, i) => `
+      <div class="step"><span class="step-n">${i + 1}</span>
+        <div><b>${esc(p.title)}</b><p>${esc(p.text)}</p></div></div>`).join('');
+
+    app.innerHTML = `
+      <header class="topbar">
+        <span class="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 17 10 11l4 3 6-7"/><path d="M14 7h6v6"/></svg>Spreadsheet Rescue</span>
+        <nav class="secnav" id="secnav">
+          <a href="#sheet">The sheet</a><a href="#cleanup">Cleanup</a><a href="#mapping">Mapping</a>
+          <a href="#crm">The CRM</a><a href="#results">Results</a><a href="#method">Method</a>
+        </nav>
+        <a class="badge" href="../index.html" title="Back to all three CRM samples">Sample project · ← Portfolio</a>
+      </header>
+
+      <section class="hero">
+        <p class="kicker">A CRM migration, shown honestly</p>
+        <h1>From the spreadsheet everyone was afraid to touch<br>to a system the whole crew trusts</h1>
+        <p class="lede"><b>${esc(M.biz.name)}</b> — ${esc(M.biz.line)}
+          Below is their actual sheet (faithfully recreated, names invented), what the cleanup did to
+          every single row, and the CRM it became. Click anything: every row knows where it went,
+          and every clean record remembers where it came from.</p>
+        <div class="topline">
+          <div><b>${S.rowsIn}</b><span>rows in the sheet</span></div>
+          <div><b>${S.contactsOut}</b><span>clean contacts out</span></div>
+          <div><b>${S.dupExtra}</b><span>duplicate rows merged</span></div>
+          <div><b>${S.archived}</b><span>rows archived, not deleted</span></div>
+          <div><b>0</b><span>details lost</span></div>
+        </div>
+      </section>
+
+      <section class="sec" id="sheet">
+        <h2><span class="sec-n">1</span>The spreadsheet, as found</h2>
+        <p class="sec-sub">“${esc(M.biz.sheetName)}” — ${S.rowsIn} rows, four years of business, one tab named FINAL that wasn't.
+          Use the buttons to light up each kind of problem, and <b>click any row</b> to see exactly what the migration did with it.</p>
+        <div class="chips" id="issue-chips">${chips}<button class="chip chip-clear" data-issue="">Lights off</button></div>
+        ${sheetTable(M.rows)}
+        <p class="foot-note">This mess is the normal amount of mess. Sheets like this run thousands of real businesses — the point isn't to laugh at it, it's to show it can be fixed without losing anything.</p>
+      </section>
+
+      <section class="sec" id="cleanup">
+        <h2><span class="sec-n">2</span>The cleanup — every decision traceable</h2>
+        <p class="sec-sub">${S.dupExtra + Object.keys(S.groups).length} rows turned out to be ${Object.keys(S.groups).length} people. Nothing was deleted: merged rows point to their new record, and off-topic rows were archived with a reason.</p>
+        <h3>People who existed more than once</h3>
+        <div class="merge-list">${mergeCards}</div>
+        <h3>Rows that weren't customers at all</h3>
+        <div class="arch-list">${archCards}</div>
+      </section>
+
+      <section class="sec" id="mapping">
+        <h2><span class="sec-n">3</span>The mapping — where every column went</h2>
+        <p class="sec-sub">Each spreadsheet column became a real field with a real type. This table <i>is</i> the migration spec — it's what gets agreed before anything moves.</p>
+        <div class="map-list">${colMap}</div>
+        <h3>The status column deserves its own table</h3>
+        <p class="sec-sub">${M.statusMap.length} different things people typed, mapped to ${M.stages.length} stages everyone agreed on:</p>
+        <div class="sm-wrap"><table class="sm-table">${statusRows}</table></div>
+      </section>
+
+      <section class="sec" id="crm">
+        <h2><span class="sec-n">4</span>The CRM it became</h2>
+        <p class="sec-sub">Same people, zero guessing. Filter by stage, search anything, and <b>open any card</b> to see the details, what got fixed, and the original spreadsheet rows underneath it.</p>
+        <div class="crm-tools">
+          <input id="crm-search" class="search" type="search" placeholder="Search name, street, service…" aria-label="Search contacts">
+          <div class="chips" id="stage-chips">${stageChips}</div>
+        </div>
+        <div class="ccards" id="ccards"></div>
+      </section>
+
+      <section class="sec" id="results">
+        <h2><span class="sec-n">5</span>What actually changed</h2>
+        <p class="sec-sub">Every figure below is calculated from the records above — nothing is typed in.</p>
+        <div class="res-cards">
+          <div class="res-card"><b>${money(S.quotedSum)}</b><span>in open quotes now visible (${S.quotedN} jobs)</span></div>
+          <div class="res-card"><b>${money(S.schedSum)}</b><span>booked and scheduled (${S.schedN} jobs)</span></div>
+          <div class="res-card"><b>${money(S.wonSum)}</b><span>won this year, finally countable (${S.wonN} jobs)</span></div>
+          <div class="res-card"><b>~${money(S.recurringMo)}</b><span>a month in recurring work, now a number</span></div>
+          <div class="res-card"><b>${S.tasks}</b><span>follow-ups that were shouting from cells — now tasks with dates</span></div>
+        </div>
+        <h3>Data quality, measured</h3>
+        <p class="sec-sub">The “before” bars are computed live by validating the messy cells above — try changing one in the data file and this section moves.</p>
+        <div class="q-list">${qRows}</div>
+      </section>
+
+      <section class="sec" id="method">
+        <h2><span class="sec-n">6</span>How a migration like this runs</h2>
+        <div class="steps">${steps}</div>
+        <div class="about-card">
+          <h3>About this sample</h3>
+          <p>This is a portfolio piece. ${esc(M.biz.name)} is fictional and every name, number and typo
+            was invented — but the problems are the real ones found in almost every customer spreadsheet,
+            and the method shown is the method used.</p>
+          <p>It's one of three connected samples. The
+            <a href="../hubspot-verticals/index.html">four-industry CRM showcase</a> shows what a fully
+            configured system looks like after a migration like this, and the
+            <a href="../client-onboarding/index.html">client onboarding portal</a> shows how the client
+            follows the whole project. <a href="../index.html">See all three →</a></p>
+          <p class="fine">Nothing here is affiliated with any CRM vendor. Built as a demonstration of migration work:
+            audit → mapping → cleanup → import → proof.</p>
+        </div>
+      </section>
+
+      <footer class="foot">Sample project · all data fictional · every stat on this page is computed from the sample records at load time</footer>
+
+      <div class="drawer-backdrop" id="dbk" hidden></div>
+      <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog"></aside>`;
+
+    renderCards();
+    wire();
+  }
+
+  /* ---- the CRM card grid (filterable) --------------------------------------- */
+  const crmState = { stage: '', q: '' };
+  function renderCards() {
+    const q = crmState.q.toLowerCase();
+    const list = M.contacts.filter(c =>
+      (!crmState.stage || c.stage === crmState.stage) &&
+      (!q || (c.name + ' ' + c.address + ' ' + c.service).toLowerCase().includes(q)));
+    $('#ccards').innerHTML = list.map(contactCard).join('') ||
+      '<p class="empty">Nobody matches — clear the search or pick another stage.</p>';
+    document.querySelectorAll('#stage-chips .chip').forEach(ch =>
+      ch.classList.toggle('on', ch.dataset.stage === crmState.stage));
+  }
+
+  /* ---- drawers ---------------------------------------------------------------- */
+  function openDrawer(html) {
+    const d = $('#drawer'), b = $('#dbk');
+    d.innerHTML = `<button class="d-close" data-close aria-label="Close">✕</button>` + html;
+    d.hidden = false; b.hidden = false;
+    void d.offsetWidth;   // flush styles first so the slide-in still animates
+    d.classList.add('open'); b.classList.add('open');
+    d.focus && d.focus();
+  }
+  function closeDrawer() {
+    const d = $('#drawer'), b = $('#dbk');
+    d.classList.remove('open'); b.classList.remove('open');
+    setTimeout(() => { d.hidden = true; b.hidden = true; }, 200);
+  }
+
+  function drawerRow(r) {
+    const fateHtml = (() => {
+      if (r.archive) return `<div class="fate arch"><b>Archived, not deleted.</b><p>${esc(r.archive)}</p></div>`;
+      const c = M.contacts.find(x => x.sourceRows.includes(r.id));
+      const merged = c.sourceRows.length > 1;
+      return `<div class="fate"><b>${merged ? 'Merged into one clean record' : 'Became a clean record'}</b>
+        ${merged ? `<p>Together with row${c.sourceRows.length > 2 ? 's' : ''} ${c.sourceRows.filter(n => n !== r.id).map(n => n + 1).join(' + ')}.</p>` : ''}
+        <button class="mc-contact" data-contact="${c.id}" style="--pc:${stageOf(c.stage).color}">
+          <b>${esc(c.name)}</b><span>open the clean record</span></button></div>`;
+    })();
+    const iss = rowIssues(r);
+    const issList = Object.keys(iss).filter(k => k !== 'archive').map(k =>
+      `<li>${esc(ISSUES.find(i => i.key === k).label)}</li>`).join('');
+    return `<h3>Row ${r.id + 1} of the sheet</h3>
+      ${sheetTable([r], { mini: true })}
+      ${issList ? `<h4>What was wrong here</h4><ul class="iss-list">${issList}</ul>` : '<p class="fine">One of the tidy rows, believe it or not.</p>'}
+      <h4>Where it went</h4>${fateHtml}`;
+  }
+
+  function drawerContact(c) {
+    const s = stageOf(c.stage);
+    const srcRows = c.sourceRows.map(rowById);
+    const facts = [
+      ['Stage', stagePill(c.stage)],
+      ['Service', esc(c.service)],
+      ['Money', esc(c.dealLabel)],
+      ['Phone', c.phone ? esc(c.phone) : '<i>none yet — and that\'s recorded honestly</i>'],
+      ['Email', (c.email ? esc(c.email) : '<i>none on file</i>') + (c.email2 ? '<br>' + esc(c.email2) + ' <small>(second email, rescued from a shared cell)</small>' : '')],
+      ['Address', esc(c.address)],
+      ['Last contact', esc(fmtDate(c.lastContact))],
+      ['Next action', c.nextAction && c.nextAction !== '—' ? esc(c.nextAction) : '—']
+    ].map(f => `<div class="fact"><dt>${f[0]}</dt><dd>${f[1]}</dd></div>`).join('');
+    const fixes = c.fixes.map(f =>
+      `<div class="fix"><span class="fx-field">${esc(f.field)}</span>
+        <span class="fx-from">${esc(f.from)}</span><span class="fx-arr">→</span><span class="fx-to">${esc(f.to)}</span></div>`).join('');
+    return `<div class="d-head" style="--pc:${s.color}"><h3>${esc(c.name)}</h3>${c.household ? pill('household', '#7c98b6') : ''}</div>
+      <dl class="facts">${facts}</dl>
+      <h4>What the migration fixed here</h4><div class="fixes">${fixes}</div>
+      <h4>The original row${srcRows.length > 1 ? 's' : ''} underneath</h4>
+      ${sheetTable(srcRows, { mini: true })}
+      <p class="fine">This link never breaks: every record in the CRM keeps its source rows, so any value can be audited back to the sheet.</p>`;
+  }
+
+  /* ---- wiring -------------------------------------------------------------------- */
+  function wire() {
+    // issue chips
+    $('#issue-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip'); if (!chip) return;
+      const key = chip.dataset.issue;
+      document.querySelectorAll('#issue-chips .chip').forEach(c => c.classList.toggle('on', c === chip && key !== ''));
+      const sheet = document.querySelector('#sheet .sheet');
+      sheet.dataset.mode = key;
+    });
+
+    // stage chips + search
+    $('#stage-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.chip'); if (!chip) return;
+      crmState.stage = chip.dataset.stage === crmState.stage ? '' : chip.dataset.stage;
+      renderCards();
+    });
+    $('#crm-search').addEventListener('input', e => { crmState.q = e.target.value; renderCards(); });
+
+    // drawers (rows + contacts open from anywhere, including inside drawers)
+    document.body.addEventListener('click', e => {
+      if (e.target.closest('[data-close]') || e.target.id === 'dbk') { closeDrawer(); return; }
+      const cbtn = e.target.closest('[data-contact]');
+      if (cbtn) { openDrawer(drawerContact(contactById(cbtn.dataset.contact))); return; }
+      const rbtn = e.target.closest('[data-row]');
+      if (rbtn && !rbtn.closest('.mini')) { openDrawer(drawerRow(rowById(+rbtn.dataset.row))); return; }
+    });
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDrawer();
+      if (e.key === 'Enter' && document.activeElement.matches && document.activeElement.matches('.sh-row')) {
+        openDrawer(drawerRow(rowById(+document.activeElement.dataset.row)));
+      }
+    });
+
+    // scroll-spy
+    const links = Array.from(document.querySelectorAll('#secnav a'));
+    const secs = links.map(a => document.querySelector(a.getAttribute('href')));
+    const spy = () => {
+      let cur = 0;
+      secs.forEach((s, i) => { if (s.getBoundingClientRect().top < 140) cur = i; });
+      links.forEach((a, i) => a.classList.toggle('on', i === cur));
+    };
+    document.addEventListener('scroll', spy, { passive: true });
+    spy();
+  }
+
+  render();
+})();

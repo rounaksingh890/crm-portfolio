@@ -81,3 +81,20 @@
   .kpi { padding: 11px 12px; }
   .tn-logo span { display: none; }
 }
+
+/* ---- HubSpot-fidelity layer, phone rules ------------------------------- */
+@media (max-width: 900px) {
+  .tn-me-name { display: none; }
+  .tn-me { padding: 0 6px 0 5px; }
+}
+@media (max-width: 720px) {
+  .rsp .td-chk { display: none; }          /* row checkboxes are a desktop pattern */
+  .modal .form-grid { grid-template-columns: 1fr; }
+  .modal-wrap { padding: 4vh 10px 10px; }
+  .dnd-hint { display: none; }             /* dragging is a mouse pattern */
+  .vtabs { margin-top: 2px; }
+  .tbl-foot { justify-content: center; }
+  .tbl-foot .pager { margin-left: 0; }
+  .list-shell .toolbar { padding: 12px 12px 0; }
+  .user-grid { grid-template-columns: 1fr; }
+}

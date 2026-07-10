@@ -14,6 +14,7 @@
         { icon: 'user', label: 'Contacts', view: 'contacts' },
         { icon: 'building', label: 'Companies', view: 'companies' },
         { icon: 'deal', label: t.deals, view: 'deals' },
+        { icon: 'list', label: 'Lists', view: 'lists' },
         { icon: 'task', label: 'Tasks', view: 'tasks', sub: HSV.openTasks().length + ' to do' },
         { icon: 'calendar', label: 'Meetings', view: 'meetings' },
       ] },
@@ -29,6 +30,7 @@
       settings: { label: 'Settings', items: [
         { icon: 'pencil', label: 'Custom fields', view: 'properties' },
         { icon: 'grid', label: 'Connected apps', view: 'integrations' },
+        { icon: 'users', label: 'Users & teams', view: 'users' },
         { icon: 'help', label: 'About this sample', view: 'about' },
       ] },
     };
@@ -36,12 +38,12 @@
 
   const GROUP_OF = {
     contacts: 'crm', contact: 'crm', companies: 'crm', company: 'crm',
-    deals: 'crm', deal: 'crm', tasks: 'crm', meetings: 'crm',
+    deals: 'crm', deal: 'crm', tasks: 'crm', meetings: 'crm', lists: 'crm',
     inbox: 'conv', tickets: 'conv', ticket: 'conv',
     campaigns: 'mkt', campaign: 'mkt', forms: 'mkt', form: 'mkt',
     workflows: 'mkt', workflow: 'mkt',
     reports: 'reports', report: 'reports',
-    properties: 'settings', integrations: 'settings', about: 'settings',
+    properties: 'settings', integrations: 'settings', users: 'settings', about: 'settings',
   };
 
   /* ------------------------------------------------------------- shell HTML */
@@ -62,8 +64,11 @@
       <div class="tn-right">
         <button class="tn-search-btn" data-action="open-search">${UI.icon('search')}<span>Search ${esc(D.brand)}…</span><kbd>/</kbd></button>
         <button class="tn-ib" data-action="start-tour" title="Take the guided tour" aria-label="Take the guided tour">${UI.icon('help')}</button>
+        <button class="tn-ib" data-menu="notifs" title="Notifications" aria-label="Notifications">${UI.icon('bell')}
+          ${notifItems().length && !HSV.ov().notifRead ? `<span class="tn-badge">${notifItems().length}</span>` : ''}</button>
         <button class="tn-ib ${g === 'settings' ? 'active' : ''}" data-menu="settings" title="Settings" aria-label="Settings">${UI.icon('gear')}</button>
         <button class="tn-ib" data-menu="portal" title="Switch industry" aria-label="Switch industry">${UI.icon('grid')}</button>
+        <button class="tn-me" data-menu="me" aria-label="Account menu">${UI.avatar(HSV.D().owners[0].name, HSV.D().owners[0].color, 'av-sm')}<span class="tn-me-name">${esc(HSV.D().owners[0].name.split(' ')[0])}</span>${UI.icon('chev', 'chev')}</button>
       </div>
     </nav>
     <div class="sample-note">${UI.icon('help')} Sample portal with fictional data —
@@ -83,6 +88,38 @@
     </nav>`;
   }
 
+  /* ------------------------------------------------------------- notifications
+     Derived live from the records, so they're always true: unread messages,
+     tickets waiting on us, overdue tasks, and deals closing this week. */
+  function notifItems() {
+    const D = HSV.D(), t = D.terms;
+    const items = [];
+    HSV.unreadConvs().forEach(v => items.push({
+      icon: 'chat', tone: 'blue', href: HSV.href('inbox', v.id),
+      main: 'New message from ' + HSV.cName(HSV.contact(v.contactId)), sub: v.subject }));
+    D.tickets.filter(x => HSV.ticketStatus(x) === 'Waiting on us' && x.priority === 'High').forEach(x =>
+      items.push({ icon: 'ticket', tone: 'red', href: HSV.href('ticket', x.id),
+        main: 'High-priority ticket needs a reply', sub: x.subject }));
+    HSV.overdueTasks().forEach(k => items.push({
+      icon: 'task', tone: 'yellow', href: HSV.href('tasks'),
+      main: 'Task overdue: ' + k.title, sub: 'was due ' + HSV.rel(k.due) }));
+    HSV.dealsOpen().filter(d => { const n = HSV.daysFromToday(d.close); return n >= 0 && n <= 7; })
+      .forEach(d => items.push({ icon: 'deal', tone: 'green', href: HSV.href('deal', d.id),
+        main: t.deal + ' closes ' + HSV.rel(d.close), sub: d.name }));
+    return items;
+  }
+  const NI_TONE = { blue: 'chan-Chat', red: 'chan-Email', yellow: 'ws-delay', green: 'chan-WhatsApp' };
+  function notifPanel() {
+    const items = notifItems();
+    const list = items.map(n => `<a class="notif-item" href="${n.href}">
+      <span class="ni-ic ${NI_TONE[n.tone]}">${UI.icon(n.icon)}</span>
+      <span class="grow"><span class="b">${esc(n.main)}</span><small>${esc(n.sub)}</small></span></a>`).join('');
+    return `<div class="notif-head">${UI.icon('bell')}<span class="b">Notifications</span>
+        <button class="btn btn-ghost btn-sm" data-action="notifs-read">Mark all read</button></div>
+      <div class="notif-list slim-scroll">${list ||
+        '<div class="notif-empty">All clear — nothing needs you right now.</div>'}</div>`;
+  }
+
   /* ------------------------------------------------------------- dropdown menus */
   let openPop = null;
   function closeMenus() {
@@ -91,6 +128,19 @@
   }
 
   function popItemsFor(key) {
+    if (key === 'notifs') return notifPanel();
+    if (key === 'me') {
+      const me = HSV.D().owners[0];
+      return `<div class="pop-label">${esc(HSV.D().brand)} · sample account</div>
+        <a class="pop-item" href="${HSV.href('contacts', null, { owner: me.id })}">
+          ${UI.avatar(me.name, me.color, 'av-sm')}<span class="grow">${esc(me.name)}<span class="small muted" style="display:block">${esc(me.role)}</span></span></a>
+        <div class="pop-sep"></div>
+        <a class="pop-item" href="${HSV.href('users')}">${UI.icon('users')} Users &amp; teams</a>
+        <a class="pop-item" href="${HSV.href('about')}">${UI.icon('help')} About this sample</a>
+        <div class="pop-sep"></div>
+        <a class="pop-item" href="#/">${UI.icon('grid')} All four industries</a>
+        <a class="pop-item" href="../index.html">${UI.icon('back')} Portfolio hub</a>`;
+    }
     if (key === 'portal') {
       const cur = HSV.state.portal;
       return `<div class="pop-label">Switch industry</div>` +
@@ -115,7 +165,7 @@
     closeMenus();
     if (wasOpen) return;
     const pop = document.createElement('div');
-    pop.className = 'pop';
+    pop.className = 'pop' + (key === 'notifs' ? ' notif-pop' : '');
     pop.dataset.key = key;
     pop.style.position = 'fixed';
     pop.style.top = '50px';
@@ -262,6 +312,13 @@
   HSV.actions['close-search'] = closeSearch;
   HSV.actions['open-sheet'] = openSheet;
   HSV.actions['close-sheet'] = closeSheet;
+  HSV.actions['close-modal'] = () => UI.closeModal();
+  HSV.actions['notifs-read'] = function () {
+    HSV.ov().notifRead = true;
+    closeMenus();
+    HSV.render();
+    UI.toast('Notifications marked as read');
+  };
 
   /* ------------------------------------------------------------- event wiring */
   document.addEventListener('click', function (e) {

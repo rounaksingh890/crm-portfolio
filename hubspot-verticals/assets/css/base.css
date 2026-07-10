@@ -4,9 +4,9 @@
    ========================================================================== */
 
 :root {
-  /* chrome */
-  --nav:        #33475b;   /* dark navy top bar, like HubSpot */
-  --nav-2:      #2b3c4e;
+  /* chrome — HubSpot's current deep navy */
+  --nav:        #213343;
+  --nav-2:      #2d3e50;
   --nav-line:   #425b76;
 
   /* surfaces */
@@ -24,9 +24,9 @@
   --muted:      #5c7186;   /* 4.6:1 on white */
   --faint:      #7c98b6;   /* large text / decoration only */
 
-  /* brand + semantic */
-  --orange:     #ff7a59;
-  --orange-2:   #e66e50;
+  /* brand + semantic — coral CTA like current HubSpot */
+  --orange:     #ff5c35;
+  --orange-2:   #e04b26;
   --orange-bg:  #fff1ee;
   --link:       #0091ae;
   --link-2:     #007a8c;
@@ -55,8 +55,8 @@
   --sh-2: 0 5px 16px rgba(45,62,80,.14);
   --sh-3: 0 16px 40px rgba(45,62,80,.20);
 
-  /* shape */
-  --r-sm: 4px;
+  /* shape — HubSpot's tight 3px corners */
+  --r-sm: 3px;
   --r:    8px;
   --r-lg: 14px;
 
@@ -185,12 +185,12 @@ img, svg { display: block; }
 .av-sm { width: 22px; height: 22px; font-size: 9px; }
 .av-sq { border-radius: var(--r-sm); }
 
-/* ---- cards ------------------------------------------------------------------ */
+/* ---- cards — flat with a real border, like HubSpot ---------------------------- */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--r);
-  box-shadow: var(--sh-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: none;
 }
 
 /* ---- tables ------------------------------------------------------------------ */

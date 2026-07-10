@@ -33,7 +33,7 @@
         text: 'Calls, emails, meetings and notes in one timeline. The note box at the top really works — type something and save it.' },
       { view: 'deals', sel: '.board',
         title: t.pipelineName,
-        text: 'Each column is a stage; each card is a ' + t.deal.toLowerCase() + '. Open one and click a different stage — the totals, the dashboard and the reports all move together.' },
+        text: 'Each column is a stage; each card is a ' + t.deal.toLowerCase() + '. Drag a card into another column — or open it and click a stage. Either way the totals, the dashboard and the reports all move together.' },
       { view: 'inbox', sel: '.inbox',
         title: 'One inbox for everything',
         text: 'Email, website chat and WhatsApp land in the same place. Open a conversation and send a reply — it appears in the thread.' },

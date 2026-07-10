@@ -26,6 +26,7 @@
         <button class="btn btn-sm ${mode === 'table' ? 'btn-primary' : ''}" style="border-radius:0 4px 4px 0;margin-left:-1px" data-action="deal-mode" data-mode="table">Table</button>
       </div>
       ${ownerSel}
+      ${mode === 'board' ? `<span class="dnd-hint">${UI.icon('drag')} Drag cards between stages — every total follows</span>` : ''}
       <span class="count-note">${deals.length} ${esc(t.deals.toLowerCase())} · ${HSV.money(HSV.sum(deals), true)} in total</span>
     </div>`;
 
@@ -37,17 +38,17 @@
         const cards = list.map(d => {
           const c = d.contactId ? HSV.contact(d.contactId) : null;
           const o = HSV.owner(d.owner);
-          return `<a class="deal-card" href="${HSV.href('deal', d.id)}">
+          return `<a class="deal-card" href="${HSV.href('deal', d.id)}" draggable="true" data-deal="${d.id}">
             <div class="dc-name">${esc(d.name)}</div>
             <div class="dc-amt">${HSV.money(d.amount)}</div>
             <div class="dc-meta">${UI.icon('calendar')} ${esc(HSV.fmtDate(d.close, false))}
               ${UI.avatar(o.name, o.color, 'av-sm')}</div>
           </a>`;
-        }).join('') || `<p class="small muted" style="padding:4px 2px">Nothing here right now.</p>`;
-        return `<section class="bcol">
+        }).join('') || `<p class="small muted" style="padding:4px 2px">Nothing here right now — drag a card in.</p>`;
+        return `<section class="bcol" data-stage="${s.id}">
           <div class="bcol-head">
             <div class="t">${esc(s.label)}<span class="n">${list.length}</span></div>
-            <div class="amt">${HSV.money(HSV.sum(list))} · ${s.prob}% likely</div>
+            <div class="amt">${HSV.money(HSV.sum(list))} total · ${HSV.money(HSV.sum(list) * s.prob / 100, true)} weighted</div>
           </div>
           <div class="bcol-body slim-scroll">${cards}</div>
         </section>`;
@@ -69,12 +70,97 @@
     }
 
     return `<div class="page view-in">
-      ${UI.pageHead(esc(t.pipelineName),
-        'Every ' + esc(t.deal.toLowerCase()) + ' in one place. Open one and move it along the stages — the totals follow.')}
+      ${UI.pageHead(esc(t.pipelineName) + '<span class="ph-count">' + deals.length + ' ' + esc(t.deals.toLowerCase()) + '</span>',
+        'Every ' + esc(t.deal.toLowerCase()) + ' in one place. Drag a card to a new stage, or open one — the totals follow either way.',
+        `<button class="btn" data-action="export-deals">${UI.icon('download')} Export</button>
+         <button class="btn btn-primary" data-action="create-deal-open">Create ${esc(t.deal.toLowerCase())}</button>`)}
       <div class="stage-strip">${strip}</div>
       ${toolbar}${body}
     </div>`;
   };
+
+  HSV.actions = HSV.actions || {};
+  HSV.actions['export-deals'] = function () {
+    const D = HSV.D();
+    HSV.downloadCsv(D.key + '-' + D.terms.deals.toLowerCase() + '.csv',
+      ['Name', 'Stage', 'Amount', 'Owner', 'Expected close', 'Source'],
+      D.deals.map(d => [d.name, HSV.stage(HSV.dealStageId(d)).label, d.amount,
+        HSV.owner(d.owner).name, d.close, d.source]));
+    UI.toast('Exported as CSV');
+  };
+
+  /* ---- create deal: a real record, counted everywhere -------------------------- */
+  HSV.actions['create-deal-open'] = function () {
+    const D = HSV.D(), t = D.terms;
+    const plus30 = new Date(HSV.dt(HSV.TODAY).getTime() + 30 * 864e5).toISOString().slice(0, 10);
+    UI.modal('Create ' + t.deal.toLowerCase(), `
+      <div class="form-grid">
+        <label class="wide">${esc(t.deal)} name<input class="inp" id="nd-name" placeholder="e.g. Acme — spring package"></label>
+        <label>Amount<input class="inp" id="nd-amt" type="number" min="0" placeholder="2500"></label>
+        <label>Expected close<input class="inp" id="nd-close" type="date" value="${plus30}"></label>
+        <label>Stage<select class="sel" id="nd-stage" style="width:100%">${D.stages.filter(s => s.prob > 0 && s.prob < 100).map(s => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}</select></label>
+        <label>Owner<select class="sel" id="nd-owner" style="width:100%">${D.owners.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></label>
+        <label class="wide">Contact (optional)<select class="sel" id="nd-contact" style="width:100%"><option value="">No contact</option>${D.contacts.map(c => `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+      </div>
+      <p class="small muted">Creates a real record in the sample — the board, the dashboard and the reports will all count it instantly.</p>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="create-deal-save">Create ${esc(t.deal.toLowerCase())}</button>`);
+  };
+  HSV.actions['create-deal-save'] = function () {
+    const D = HSV.D();
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const name = v('nd-name').trim();
+    if (!name) { document.getElementById('nd-name').focus(); return; }
+    const d = {
+      id: 'd' + Date.now(), name,
+      amount: Math.max(0, +v('nd-amt') || 0),
+      stage: v('nd-stage') || D.stages[0].id,
+      close: v('nd-close') || HSV.TODAY,
+      owner: v('nd-owner') || D.owners[0].id,
+      contactId: v('nd-contact') || null, companyId: null,
+      created: HSV.TODAY, source: D.sources[0]
+    };
+    D.deals.unshift(d);
+    UI.closeModal();
+    HSV.go(HSV.href('deal', d.id));
+    UI.toast(D.terms.deal + ' created — the pipeline total just moved');
+  };
+
+  /* ---- drag & drop between stages ------------------------------------------------ */
+  let dragId = null;
+  document.addEventListener('dragstart', function (e) {
+    const card = e.target.closest && e.target.closest('.deal-card[data-deal]');
+    if (!card) return;
+    dragId = card.dataset.deal;
+    card.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', dragId);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  document.addEventListener('dragend', function () {
+    dragId = null;
+    document.querySelectorAll('.deal-card.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.bcol.dragover').forEach(el => el.classList.remove('dragover'));
+  });
+  document.addEventListener('dragover', function (e) {
+    const col = e.target.closest && e.target.closest('.bcol[data-stage]');
+    if (!col || !dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.bcol.dragover').forEach(el => { if (el !== col) el.classList.remove('dragover'); });
+    col.classList.add('dragover');
+  });
+  document.addEventListener('drop', function (e) {
+    const col = e.target.closest && e.target.closest('.bcol[data-stage]');
+    if (!col || !dragId) return;
+    e.preventDefault();
+    const d = HSV.deal(dragId), stage = col.dataset.stage;
+    if (d && HSV.dealStageId(d) !== stage) {
+      HSV.ov().dealStage[d.id] = stage;
+      HSV.render();
+      UI.toast('Moved to “' + HSV.stage(stage).label + '” — totals updated');
+    }
+    dragId = null;
+  });
 
   HSV.actions = HSV.actions || {};
   HSV.actions['deal-mode'] = function (el) {

@@ -44,6 +44,10 @@
     doc:      '<path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8h4.5"/>',
     star:     '<path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.3l-4.8 2.6.9-5.4L4.2 9.7l5.4-.8z"/>',
     eye:      '<path d="M3 12c2.2-4.4 5.2-6.5 9-6.5s6.8 2.1 9 6.5c-2.2 4.4-5.2 6.5-9 6.5S5.2 16.4 3 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    bell:     '<path d="M6.2 9.8a5.8 5.8 0 0 1 11.6 0c0 3.8 1.4 5.2 1.9 6H4.3c.5-.8 1.9-2.2 1.9-6z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/>',
+    list:     '<path d="M8.5 6.5h11M8.5 12h11M8.5 17.5h11"/><circle cx="4.6" cy="6.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.6" cy="17.5" r="1.3" fill="currentColor" stroke="none"/>',
+    upload:   '<path d="M12 15.5V4.5m0 0-4 4m4-4 4 4"/><path d="M4.5 17v2A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-2"/>',
+    drag:     '<g fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></g>',
   };
   const UI = HSV.ui = {};
   UI.icon = (name, cls) =>
@@ -132,6 +136,45 @@
   };
   UI.assocItem = (href, main, sub, end) => `
     <a class="assoc-item" href="${href}"><span class="grow"><span class="b clip">${main}</span><small>${sub || ''}</small></span>${end ? `<span class="end">${end}</span>` : ''}</a>`;
+
+  /* ---- modal ------------------------------------------------------------------------------ */
+  let modalEl = null;
+  UI.closeModal = function () {
+    if (modalEl) { modalEl.remove(); modalEl = null; }
+    document.removeEventListener('keydown', escModal);
+  };
+  function escModal(e) { if (e.key === 'Escape') UI.closeModal(); }
+  UI.modal = function (title, bodyHtml, footHtml) {
+    UI.closeModal();
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-wrap';
+    wrap.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+      <div class="modal-head"><h3>${esc(title)}</h3>
+        <button class="x" data-action="close-modal" aria-label="Close">${UI.icon('x')}</button></div>
+      <div class="modal-body">${bodyHtml}</div>
+      ${footHtml ? `<div class="modal-foot">${footHtml}</div>` : ''}
+    </div>`;
+    wrap.addEventListener('mousedown', (e) => { if (e.target === wrap) UI.closeModal(); });
+    document.body.appendChild(wrap);
+    document.addEventListener('keydown', escModal);
+    modalEl = wrap;
+    const first = wrap.querySelector('input, textarea, select');
+    if (first) first.focus();
+    return wrap;
+  };
+
+  /* ---- pagination footer (HubSpot look; datasets here fit one page) ------------------------- */
+  UI.tblFoot = function (shown, total, label) {
+    return `<div class="tbl-foot">
+      <span>Showing <b class="num">${shown ? '1–' + shown : '0'}</b> of <b class="num">${total}</b> ${esc(label || 'records')}</span>
+      <div class="pager">
+        <button class="pg" disabled aria-label="Previous page">‹</button>
+        <button class="pg on" aria-current="page">1</button>
+        <button class="pg" disabled aria-label="Next page">›</button>
+        <span style="margin-left:10px">25 per page</span>
+      </div>
+    </div>`;
+  };
 
   /* ---- toast ---------------------------------------------------------------------------- */
   let toastTimer = null;

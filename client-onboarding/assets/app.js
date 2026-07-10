@@ -153,7 +153,7 @@
         <h2>Who's on it</h2>
         <div class="tgrid">
           ${D.team.map(p => `<div class="tcard"><div class="tc-top">${av(p)}<div><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div></div>
-            <span class="side side-${p.side}">${p.side === 'agency' ? esc(D.agency.name) : esc(D.client.company)}</span></div>`).join('')}
+            <span class="side-${p.side}">${p.side === 'agency' ? esc(D.agency.name) : esc(D.client.company)}</span></div>`).join('')}
         </div>
       </section>`;
   };
@@ -328,7 +328,7 @@
       <div class="tgrid">
         ${D.team.map(p => `<div class="tcard"><div class="tc-top">${av(p)}<div><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div></div>
           <p class="tnote">${esc(p.note)}</p>
-          <span class="side side-${p.side}">${p.side === 'agency' ? esc(D.agency.name) : esc(D.client.company)}</span></div>`).join('')}
+          <span class="side-${p.side}">${p.side === 'agency' ? esc(D.agency.name) : esc(D.client.company)}</span></div>`).join('')}
       </div></section>
     <section class="card"><h2>Questions everyone asks</h2>
       ${D.faq.map(f => `<details class="faq"><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</section>

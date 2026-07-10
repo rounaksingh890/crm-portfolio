@@ -6,8 +6,10 @@
   const HSV = window.HSV, UI = HSV.ui, esc = HSV.esc;
 
   HSV.views.dashboard = function () {
-    const D = HSV.D();
+    const D = HSV.D(), q = HSV.state.q;
     const t = D.terms;
+    const range = q.range === '3' ? 3 : 6;      // working date-range filter
+    const sl = arr => arr.slice(-range);
     const today = HSV.dt(HSV.TODAY).toLocaleDateString('en-US',
       { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -31,9 +33,9 @@
     /* ---- charts ---- */
     const M = D.monthly;
     const revenue = `<section class="card chart-card">
-      <div class="cc-head"><h3>Money coming in</h3><span class="cc-sub">accepted ${esc(t.deals.toLowerCase())}, last 6 months</span>
+      <div class="cc-head"><h3>Money coming in</h3><span class="cc-sub">accepted ${esc(t.deals.toLowerCase())}, last ${range} months</span>
         <a href="${HSV.href('report', 'r1')}">See report</a></div>
-      <div class="chart-scroll slim-scroll">${HSV.charts.line(M.labels, M.revenue, { money: true })}</div>
+      <div class="chart-scroll slim-scroll">${HSV.charts.line(sl(M.labels), sl(M.revenue), { money: true })}</div>
     </section>`;
 
     const donut = `<section class="card chart-card">
@@ -91,9 +93,15 @@
         </a>`;
       }).join('');
 
+    const rangeBtns = `<div class="row" style="gap:0">
+      <button class="btn btn-sm ${range === 3 ? 'btn-primary' : ''}" style="border-radius:3px 0 0 3px" data-action="dash-range" data-r="3">Last 3 months</button>
+      <button class="btn btn-sm ${range === 6 ? 'btn-primary' : ''}" style="border-radius:0 3px 3px 0;margin-left:-1px" data-action="dash-range" data-r="6">Last 6 months</button>
+    </div>`;
+
     return `<div class="page view-in">
       ${UI.pageHead(esc(D.brand) + ' — your day at a glance',
         esc(today) + ' · everything below is calculated live from the sample records',
+        rangeBtns +
         `<button class="btn" data-action="start-tour">${UI.icon('help')} Take the tour</button>
          <a class="btn btn-primary" href="${HSV.href('reports')}">${UI.icon('chart')} Reports</a>`)}
       <div class="kpis">${kpis}</div>
@@ -105,5 +113,11 @@
         <section class="card list-card"><h3>${UI.icon('inbox')} Latest messages <a href="${HSV.href('inbox')}">Open inbox</a></h3>${convs}</section>
       </div>
     </div>`;
+  };
+
+  HSV.actions = HSV.actions || {};
+  HSV.actions['dash-range'] = function (el) {
+    HSV.setQuery({ range: el.dataset.r === '3' ? '3' : '' });
+    HSV.render();
   };
 })();

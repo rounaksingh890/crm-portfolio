@@ -74,6 +74,42 @@
     HSV.ui.toast(HSV.intOn(name) ? name + ' connected' : name + ' disconnected');
   };
 
+  /* ------------------------------------------------------------- users & teams */
+  HSV.views.users = function () {
+    const D = HSV.D(), t = D.terms;
+    const cards = D.owners.map(o => {
+      const contacts = D.contacts.filter(c => c.owner === o.id).length;
+      const open = HSV.dealsOpen().filter(d => d.owner === o.id);
+      const tickets = D.tickets.filter(x => x.owner === o.id && HSV.ticketStatus(x) !== 'Closed').length;
+      const tasks = HSV.openTasks().filter(k => k.owner === o.id).length;
+      return `<div class="card user-card">
+        <div class="u-top">${UI.avatar(o.name, o.color, 'av-lg')}
+          <span class="grow"><span class="b">${esc(o.name)}</span><small>${esc(o.role)}</small></span>
+          ${UI.pill(o.id === D.owners[0].id ? 'Admin' : 'User', o.id === D.owners[0].id ? 't-orange' : 't-gray')}</div>
+        <div class="u-stats">
+          <span><b>${contacts}</b>contacts</span>
+          <span><b>${HSV.money(HSV.sum(open), true)}</b>open ${esc(t.deals.toLowerCase())}</span>
+          <span><b>${tickets}</b>open tickets</span>
+          <span><b>${tasks}</b>tasks</span>
+        </div>
+        <div class="row">
+          <a class="btn btn-sm" href="${HSV.href('contacts', null, { owner: o.id })}">Their contacts</a>
+          <a class="btn btn-sm" href="${HSV.href('deals', null, { owner: o.id })}">Their ${esc(t.deals.toLowerCase())}</a>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Users & teams<span class="ph-count">' + D.owners.length + ' seats</span>',
+        'Everyone with a login, what they own, and how much of the pipeline they carry — every number counted live.',
+        `<button class="btn btn-primary" data-action="fake-view">Invite user</button>`)}
+      <div class="user-grid">${cards}</div>
+      <p class="small muted" style="margin-top:14px;max-width:70ch">Permissions in the real build follow the same idea as everything else here:
+        each person sees what their role needs — no more, no less. Owners are assigned automatically by the routing rules in
+        <a href="${HSV.href('workflows')}">Automations</a>.</p>
+    </div>`;
+  };
+
   /* ------------------------------------------------------------- about */
   HSV.views.about = function () {
     const D = HSV.D();

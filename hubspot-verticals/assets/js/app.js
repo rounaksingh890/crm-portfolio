@@ -71,9 +71,16 @@
         <button class="tn-me" data-menu="me" aria-label="Account menu">${UI.avatar(HSV.D().owners[0].name, HSV.D().owners[0].color, 'av-sm')}<span class="tn-me-name">${esc(HSV.D().owners[0].name.split(' ')[0])}</span>${UI.icon('chev', 'chev')}</button>
       </div>
     </nav>
-    <div class="sample-note">${UI.icon('help')} Sample portal with fictional data —
-      <a href="${HSV.href('about')}">about this demo</a>
-      · <a href="../index.html">↑ all three CRM samples</a></div>`;
+    ${(function () { try { if (sessionStorage.getItem('hsv-note')) return ''; } catch (e) {}
+      return `<div class="sample-note">${UI.icon('help')} Sample portal with fictional data —
+        <a href="${HSV.href('about')}">about this demo</a>
+        · <a href="../index.html">↑ all three CRM samples</a>
+        <button class="sn-x" data-action="note-dismiss" aria-label="Hide this note" title="Hide">${UI.icon('x')}</button></div>`; })()}`;
+  }
+
+  /* floating help beacon, HubSpot-style, on every portal screen */
+  function beacon() {
+    return `<button class="beacon" data-action="help-open" aria-label="Help and tour" title="Help & tour">?</button>`;
   }
 
   function bottomnav() {
@@ -292,7 +299,7 @@
       document.documentElement.style.setProperty('--accent', D.accent);
       const fn = HSV.views[r.view] || HSV.views.dashboard;
       document.title = D.brand + ' · ' + (r.view.charAt(0).toUpperCase() + r.view.slice(1));
-      root.innerHTML = topnav() + '<main id="view">' + fn() + '</main>' + bottomnav();
+      root.innerHTML = topnav() + '<main id="view">' + fn() + '</main>' + bottomnav() + beacon();
     }
 
     if (sameDoc) window.scrollTo(0, scrollY);
@@ -318,6 +325,32 @@
     closeMenus();
     HSV.render();
     UI.toast('Notifications marked as read');
+  };
+  HSV.actions['note-dismiss'] = function () {
+    try { sessionStorage.setItem('hsv-note', '1'); } catch (e) {}
+    const n = document.querySelector('.sample-note');
+    if (n) n.remove();
+  };
+  HSV.actions['welcome-tour'] = function () { UI.closeModal(); HSV.tour.start(); };
+  HSV.actions['help-go'] = function (el) { UI.closeModal(); HSV.go(el.dataset.href); };
+  HSV.actions['help-open'] = function () {
+    const D = HSV.D(), t = D.terms;
+    UI.modal('Need a hand?', `
+      <button class="help-row" data-action="welcome-tour">
+        <span class="ni-ic chan-Email">${UI.icon('help')}</span>
+        <span class="grow"><b>Take the 60-second tour</b><small>The fastest way to see how everything fits together.</small></span></button>
+      <button class="help-row" data-action="help-go" data-href="${HSV.href('about')}">
+        <span class="ni-ic chan-Chat">${UI.icon('doc')}</span>
+        <span class="grow"><b>About this sample</b><small>What's real, what's fictional, and why it exists.</small></span></button>
+      <div class="pop-label" style="padding-left:0">Things people love to try</div>
+      <ul class="help-tips">
+        <li>Drag a card on the <b>${esc(t.deals)}</b> board to a new stage — every total follows.</li>
+        <li>Hit <b>Create contact</b> on Contacts — the dashboard counts it instantly.</li>
+        <li>Open the <b>bell</b> up top — those notifications are computed from the records.</li>
+        <li>Reply inside a <b>ticket</b> or the <b>inbox</b> — your message joins the thread.</li>
+        <li>Press <kbd>/</kbd> anywhere to search the whole portal.</li>
+      </ul>`,
+      `<button class="btn" data-action="close-modal">Close</button>`);
   };
 
   /* ------------------------------------------------------------- event wiring */
@@ -384,11 +417,26 @@
   /* ------------------------------------------------------------- boot */
   HSV.render();
 
-  // gentle first-visit nudge towards the tour
+  // first visit to a portal: a proper welcome with the tour one click away
+  function welcome() {
+    const D = HSV.D();
+    UI.modal('Welcome to ' + D.brand, `
+      <p style="font-size:13.5px;color:var(--ink-2);line-height:1.6">You're looking at a
+        <b style="color:var(--ink)">fully configured sample CRM</b> for a fictional
+        ${esc(D.industryLabel.toLowerCase())} business. Every person and number is made up —
+        and every screen is real and clickable.</p>
+      <ul class="help-tips">
+        <li><b>Everything reconciles.</b> Create a contact or drag a ${esc(D.terms.deal.toLowerCase())} — every count follows.</li>
+        <li><b>Nothing breaks.</b> It resets when you refresh, so click with abandon.</li>
+        <li><b>Lost?</b> The orange <b>?</b> bubble (bottom right) is always there.</li>
+      </ul>`,
+      `<button class="btn" data-action="close-modal">Explore on my own</button>
+       <button class="btn btn-primary" data-action="welcome-tour">Take the 60-second tour</button>`);
+  }
   try {
-    if (HSV.state.portal && !localStorage.getItem('hsv-tour-done') && !sessionStorage.getItem('hsv-hint')) {
-      sessionStorage.setItem('hsv-hint', '1');
-      setTimeout(() => UI.toast('New here? The ? button up top starts a 60-second tour.'), 1200);
+    if (HSV.state.portal && !sessionStorage.getItem('hsv-welcome')) {
+      sessionStorage.setItem('hsv-welcome', '1');
+      setTimeout(() => { if (!HSV.tour.isActive()) welcome(); }, 700);
     }
   } catch (err) { /* private mode — fine */ }
 })();

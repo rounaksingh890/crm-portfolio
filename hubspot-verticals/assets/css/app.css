@@ -819,6 +819,42 @@ th.sortable.s-on .sc { opacity: 1; color: var(--link); }
 .user-card .u-stats { display: flex; gap: 16px; font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--border-soft); padding-top: 10px; }
 .user-card .u-stats b { display: block; color: var(--ink); font-size: 14px; font-variant-numeric: tabular-nums; }
 
+/* ---- help beacon + welcome ------------------------------------------------------------ */
+.beacon {
+  position: fixed; right: 18px; bottom: 18px;
+  width: 46px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--orange); color: #fff;
+  border: 0; border-radius: 50%;
+  font: 700 20px/1 var(--font);
+  box-shadow: 0 6px 20px rgba(255,92,53,.45);
+  cursor: pointer;
+  z-index: var(--z-sticky);
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast);
+}
+.beacon:hover { background: var(--orange-2); transform: scale(1.07); }
+.help-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  width: 100%; padding: 11px 12px;
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--r-sm);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.help-row:hover { border-color: var(--border); background: var(--surface-2); }
+.help-row .b { font-size: 13.5px; display: block; }
+.help-row small { font-size: 12px; color: var(--muted); }
+.help-tips { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 7px; font-size: 13px; color: var(--ink-2); }
+.help-tips b { color: var(--ink); }
+.help-tips kbd { padding: 0 5px; border: 1px solid var(--border); border-radius: 4px; font: 500 11px/1.6 var(--font); }
+.sn-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-left: 4px;
+  background: none; border: 0; border-radius: 50%;
+  color: inherit; cursor: pointer; opacity: .7;
+}
+.sn-x:hover { opacity: 1; background: rgba(0,0,0,.06); }
+.sn-x svg { width: 11px; height: 11px; }
+
 /* ---- misc fidelity ------------------------------------------------------------------- */
 .kpi { border-color: var(--border); box-shadow: none; border-radius: var(--r-sm); }
 .assoc-add { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--link); background: none; border: 0; cursor: pointer; }

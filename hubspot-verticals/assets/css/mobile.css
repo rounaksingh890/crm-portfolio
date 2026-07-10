@@ -88,6 +88,7 @@
   .tn-me { padding: 0 6px 0 5px; }
 }
 @media (max-width: 720px) {
+  .beacon { bottom: 74px; right: 12px; width: 42px; height: 42px; }  /* clear the bottom nav */
   .rsp .td-chk { display: none; }          /* row checkboxes are a desktop pattern */
   .modal .form-grid { grid-template-columns: 1fr; }
   .modal-wrap { padding: 4vh 10px 10px; }

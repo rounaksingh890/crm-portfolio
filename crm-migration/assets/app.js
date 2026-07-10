@@ -214,6 +214,7 @@
           <a href="#sheet">The sheet</a><a href="#cleanup">Cleanup</a><a href="#mapping">Mapping</a>
           <a href="#crm">The CRM</a><a href="#results">Results</a><a href="#method">Method</a>
         </nav>
+        <button class="tour-btn" data-tourb="start">▷ 60-second tour</button>
         <a class="badge" href="../index.html" title="Back to all three CRM samples">Sample project · ← Portfolio</a>
       </header>
 
@@ -430,4 +431,107 @@
   }
 
   render();
+
+  /* ---- guided tour: seven stops through the story --------------------------- */
+  const TOUR_STEPS = [
+    { sel: null, title: 'The 60-second story',
+      text: 'A real migration, shown honestly: one messy spreadsheet becomes a CRM the crew trusts, with nothing lost on the way. Everything here is fictional — and everything is clickable. First stop: the mess.' },
+    { sel: '#issue-chips', title: 'Light up the problems',
+      text: 'These buttons highlight each kind of mess in the sheet below — duplicates, five phone formats, money that isn\'t a number. The counts aren\'t typed in; they come from actually validating the cells.' },
+    { sel: '#sheet .sheet-scroll', title: 'Every row knows its fate',
+      text: 'The spreadsheet exactly as found, header re-paste and all. Click any row and it tells you what the migration did with it — merged, cleaned, or archived with a reason.' },
+    { sel: '.merge-list', title: 'Duplicates, merged with receipts',
+      text: 'Nine rows turned out to be four people. Every merge shows its source rows, and every clean record links back to them. Nothing is ever silently deleted.' },
+    { sel: '.sm-wrap', title: '19 moods, 7 stages',
+      text: 'Everything anyone ever typed in the status column, mapped to stages the whole team agreed on. This table is the migration spec — settled before a single cell moved.' },
+    { sel: '#crm .crm-tools', title: 'The CRM it became',
+      text: 'Same people, zero guessing. Filter, search, and open any card — you\'ll see what got fixed and the original spreadsheet rows sitting underneath it.' },
+    { sel: '.q-list', title: 'Quality measured, not claimed',
+      text: 'The “before” bars are produced by validating the messy cells above at load time — change one cell in the data file and these numbers move. That\'s the tour. Go click a row!' }
+  ];
+  const tour = { on: false, i: 0 };
+  function tourEls() {
+    let ring = $('#tring'), tip = $('#ttip');
+    if (!ring) { ring = document.createElement('div'); ring.id = 'tring'; document.body.appendChild(ring); }
+    if (!tip) { tip = document.createElement('div'); tip.id = 'ttip'; document.body.appendChild(tip); }
+    return { ring, tip };
+  }
+  function tourEnd() {
+    tour.on = false;
+    const r = $('#tring'), t = $('#ttip');
+    if (r) r.remove(); if (t) t.remove();
+  }
+  function tourPlace(scrollTo) {
+    if (!tour.on) return;
+    const s = TOUR_STEPS[tour.i];
+    const { ring, tip } = tourEls();
+    tip.innerHTML = `<span class="tt-n">${tour.i + 1} / ${TOUR_STEPS.length}</span>
+      <h3>${esc(s.title)}</h3><p>${esc(s.text)}</p>
+      <div class="tt-btns">
+        <button class="tbtn" data-tourb="end">End</button>
+        ${tour.i ? '<button class="tbtn" data-tourb="back">Back</button>' : ''}
+        <button class="tbtn primary" data-tourb="next">${tour.i === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}</button>
+      </div>`;
+    const el = s.sel ? document.querySelector(s.sel) : null;
+    if (el) {
+      if (scrollTo) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const r = el.getBoundingClientRect();
+      Object.assign(ring.style, { display: 'block', top: (r.top - 7) + 'px', left: (r.left - 7) + 'px',
+        width: (r.width + 14) + 'px', height: (r.height + 14) + 'px' });
+      const th = tip.offsetHeight || 190;
+      let top = r.bottom + 12;
+      if (top + th > innerHeight - 10) top = Math.max(10, r.top - th - 12);
+      Object.assign(tip.style, { top: top + 'px',
+        left: Math.max(10, Math.min(r.left, innerWidth - (tip.offsetWidth || 340) - 10)) + 'px' });
+    } else {
+      ring.style.display = 'none';
+      Object.assign(tip.style, { top: Math.max(10, innerHeight / 2 - 130) + 'px',
+        left: Math.max(10, innerWidth / 2 - (tip.offsetWidth || 340) / 2) + 'px' });
+    }
+  }
+  function tourShow(i) {
+    if (i < 0 || i >= TOUR_STEPS.length) return tourEnd();
+    tour.on = true; tour.i = i;
+    tourPlace(true);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-tourb]');
+    if (!b) return;
+    const k = b.dataset.tourb;
+    if (k === 'start') { welcomeClose(); tourShow(0); }
+    else if (k === 'next') tourShow(tour.i + 1);
+    else if (k === 'back') tourShow(tour.i - 1);
+    else tourEnd();
+  });
+  document.addEventListener('scroll', () => tourPlace(false), { passive: true });
+  window.addEventListener('resize', () => tourPlace(false));
+  document.addEventListener('keydown', e => {
+    if (!tour.on) return;
+    if (e.key === 'Escape') tourEnd();
+    if (e.key === 'ArrowRight') tourShow(tour.i + 1);
+    if (e.key === 'ArrowLeft') tourShow(tour.i - 1);
+  });
+
+  /* ---- first-visit welcome ----------------------------------------------------- */
+  function welcomeClose() { const w = $('#mig-welcome'); if (w) w.remove(); }
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-welcome-close]') || e.target.id === 'mig-welcome') welcomeClose();
+  });
+  try {
+    if (!sessionStorage.getItem('mig-welcome')) {
+      sessionStorage.setItem('mig-welcome', '1');
+      const w = document.createElement('div');
+      w.id = 'mig-welcome';
+      w.innerHTML = `<div class="mw-card" role="dialog" aria-modal="true" aria-label="Welcome">
+        <h3>One spreadsheet. One honest migration.</h3>
+        <p>This sample walks through a real CRM migration for a fictional landscaping company —
+          the mess, the cleanup, and the system it became. Every number on the page is computed
+          live from the sample rows, and every row is traceable in both directions.</p>
+        <div class="mw-btns">
+          <button class="tbtn" data-welcome-close>Read it top to bottom</button>
+          <button class="tbtn primary" data-tourb="start">Take the 60-second tour</button>
+        </div></div>`;
+      document.body.appendChild(w);
+    }
+  } catch (err) { /* private mode — fine */ }
 })();

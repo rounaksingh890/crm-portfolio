@@ -307,8 +307,54 @@ a.badge:hover { background: #ffedcb; text-decoration: none; }
 .fate p { font-size: 13.5px; color: var(--ink-2); }
 .fate.arch { border-style: dashed; }
 
+/* ---- guided tour + welcome ---------------------------------------------------------------------- */
+.tour-btn {
+  padding: 6px 13px; border-radius: 999px; white-space: nowrap;
+  background: var(--brand); color: #fff; border: 0;
+  font: 600 12.5px/1.4 var(--font); cursor: pointer;
+  transition: background .15s;
+}
+.tour-btn:hover { background: var(--brand-deep); }
+#tring {
+  position: fixed; z-index: 80; pointer-events: none;
+  border: 3px solid var(--brand); border-radius: 12px;
+  box-shadow: 0 0 0 4000px rgba(28, 42, 35, .5);
+  transition: all .25s ease;
+}
+#ttip {
+  position: fixed; z-index: 81; width: min(340px, calc(100vw - 20px));
+  background: #fff; border-radius: 14px; padding: 16px 18px;
+  box-shadow: 0 18px 50px -12px rgba(28, 42, 35, .5);
+}
+#ttip .tt-n { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--brand); }
+#ttip h3 { font-size: 17px; margin: 4px 0 6px; }
+#ttip p { font-size: 13.5px; color: var(--ink-2); }
+#ttip .tt-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 13px; }
+.tbtn {
+  padding: 7px 14px; border-radius: 9px;
+  background: #fff; border: 1.5px solid var(--border); color: var(--ink-2);
+  font: 700 13px/1.2 var(--font); cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.tbtn:hover { border-color: var(--brand); color: var(--brand-deep); }
+.tbtn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.tbtn.primary:hover { background: var(--brand-deep); }
+#mig-welcome {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(28, 42, 35, .45);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.mw-card {
+  max-width: 480px; background: var(--bg); border-radius: 18px;
+  padding: 26px 28px; box-shadow: 0 24px 70px -18px rgba(28, 42, 35, .55);
+}
+.mw-card h3 { font-family: var(--font-head); font-size: 22px; margin-bottom: 10px; }
+.mw-card p { font-size: 14px; color: var(--ink-2); }
+.mw-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+
 /* ---- phones ------------------------------------------------------------------------------------ */
 @media (max-width: 760px) {
+  .tour-btn { order: 2; margin-left: auto; }
   .topbar { flex-wrap: wrap; gap: 8px 14px; padding: 10px 14px; }
   .badge { display: none; }
   .secnav { order: 3; width: 100%; }

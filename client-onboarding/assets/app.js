@@ -526,7 +526,9 @@
     tour() { TOUR.start(); },
     close() { closeDrawer(); },
     'open-side'() { $('#side').classList.add('open'); $('#sbk').hidden = false; },
-    'close-side'() { $('#side').classList.remove('open'); $('#sbk').hidden = true; }
+    'close-side'() { $('#side').classList.remove('open'); $('#sbk').hidden = true; },
+    'welcome-close'() { const w = $('#ob-welcome'); if (w) w.remove(); },
+    'welcome-tour'() { const w = $('#ob-welcome'); if (w) w.remove(); TOUR.start(); }
   };
 
   document.addEventListener('click', e => {
@@ -613,4 +615,26 @@
 
   /* ---- boot -------------------------------------------------------------------------------------------- */
   render();
+
+  // first visit: a proper hello, with the tour one tap away
+  try {
+    if (!sessionStorage.getItem('ob-welcome')) {
+      sessionStorage.setItem('ob-welcome', '1');
+      const w = document.createElement('div');
+      w.id = 'ob-welcome';
+      w.innerHTML = `<div class="obw-card" role="dialog" aria-modal="true" aria-label="Welcome">
+        <h3>Welcome to your project portal, ${esc(D.client.contact)} 👋</h3>
+        <p>This one link is where your whole project lives — the plan, your to-dos, documents,
+          decisions and updates. (This copy is a sample: every name and number is fictional,
+          and it resets when you refresh.)</p>
+        <p><b>The trick to try:</b> tick a task or approve something, and watch the progress
+          ring recalculate — nothing here is typed in twice.</p>
+        <div class="obw-btns">
+          <button class="btn" data-act="welcome-close">Explore on my own</button>
+          <button class="btn primary" data-act="welcome-tour">Take the 60-second tour</button>
+        </div></div>`;
+      w.addEventListener('mousedown', e => { if (e.target === w) w.remove(); });
+      document.body.appendChild(w);
+    }
+  } catch (err) { /* private mode — fine */ }
 })();

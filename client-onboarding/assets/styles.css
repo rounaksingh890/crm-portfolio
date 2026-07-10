@@ -358,6 +358,20 @@ main { max-width: 1020px; margin: 0 auto; padding: clamp(18px, 3vw, 34px) clamp(
 #ttip p { font-size: 13.5px; color: var(--ink-2); }
 .tt-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 13px; }
 
+/* ---- first-visit welcome ------------------------------------------------------------------------------------------------------------ */
+#ob-welcome {
+  position: fixed; inset: 0; z-index: 95;
+  background: rgba(37, 42, 65, .45);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.obw-card {
+  max-width: 470px; background: var(--bg); border-radius: 18px;
+  padding: 26px 28px; box-shadow: 0 24px 70px -18px rgba(37, 42, 65, .55);
+}
+.obw-card h3 { font-family: var(--font-head); font-size: 21px; margin-bottom: 10px; }
+.obw-card p { font-size: 14px; color: var(--ink-2); margin-bottom: 10px; }
+.obw-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+
 /* ---- phones ------------------------------------------------------------------------------------------------------------------------ */
 @media (max-width: 920px) {
   .side {

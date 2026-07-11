@@ -212,7 +212,7 @@
         <span class="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 17 10 11l4 3 6-7"/><path d="M14 7h6v6"/></svg>Spreadsheet Rescue</span>
         <nav class="secnav" id="secnav">
           <a href="#sheet">The sheet</a><a href="#cleanup">Cleanup</a><a href="#mapping">Mapping</a>
-          <a href="#crm">The CRM</a><a href="#results">Results</a><a href="#method">Method</a>
+          <a href="#crm">The CRM</a><a href="#results">Results</a><a href="#try">Try it</a><a href="#method">Method</a>
         </nav>
         <button class="tour-btn" data-tourb="start">▷ 60-second tour</button>
         <a class="badge" href="../index.html" title="Back to all three CRM samples">Sample project · ← Portfolio</a>
@@ -239,6 +239,10 @@
         <p class="sec-sub">“${esc(M.biz.sheetName)}” — ${S.rowsIn} rows, four years of business, one tab named FINAL that wasn't.
           Use the buttons to light up each kind of problem, and <b>click any row</b> to see exactly what the migration did with it.</p>
         <div class="chips" id="issue-chips">${chips}<button class="chip chip-clear" data-issue="">Lights off</button></div>
+        <div class="mig-tools">
+          <input class="search" id="sheet-search" type="search" placeholder="Search the sheet — a name, a street, “TBD”…" aria-label="Search the sheet">
+          <span class="fine" id="sheet-count">${M.rows.length} rows</span>
+        </div>
         ${sheetTable(M.rows)}
         <p class="foot-note">This mess is the normal amount of mess. Sheets like this run thousands of real businesses — the point isn't to laugh at it, it's to show it can be fixed without losing anything.</p>
       </section>
@@ -284,10 +288,38 @@
         <h3>Data quality, measured</h3>
         <p class="sec-sub">The “before” bars are computed live by validating the messy cells above — try changing one in the data file and this section moves.</p>
         <div class="q-list">${qRows}</div>
+        <div class="csv-row">
+          <button class="tbtn" data-csv="before">⬇ Download the original sheet (CSV)</button>
+          <button class="tbtn" data-csv="after">⬇ Download the clean contacts (CSV)</button>
+          <span class="fine">Real files, built from the sample data on your machine — nothing is uploaded anywhere.</span>
+        </div>
+      </section>
+
+      <section class="sec" id="try">
+        <h2><span class="sec-n">6</span>Try the cleaner yourself</h2>
+        <p class="sec-sub">Type anything messy — the same rules that cleaned the sheet above run live on your keystrokes.
+          Green means the rules handled it; amber means it would go to a human, never silently guessed.</p>
+        <div class="play card">
+          <div class="play-row">
+            <label for="play-phone">A phone number, any format</label>
+            <input class="search" id="play-phone" data-play="phone" value="555.301-4482 call after 5!!">
+            <span class="play-arr">→</span><output class="play-out" id="out-phone"></output>
+          </div>
+          <div class="play-row">
+            <label for="play-date">A date, however you'd type it</label>
+            <input class="search" id="play-date" data-play="date" value="March 14">
+            <span class="play-arr">→</span><output class="play-out" id="out-date"></output>
+          </div>
+          <div class="play-row">
+            <label for="play-status">A status, in your own words</label>
+            <input class="search" id="play-status" data-play="status" value="HOT LEAD!!!">
+            <span class="play-arr">→</span><output class="play-out" id="out-status"></output>
+          </div>
+        </div>
       </section>
 
       <section class="sec" id="method">
-        <h2><span class="sec-n">6</span>How a migration like this runs</h2>
+        <h2><span class="sec-n">7</span>How a migration like this runs</h2>
         <div class="steps">${steps}</div>
         <div class="about-card">
           <h3>About this sample</h3>
@@ -431,6 +463,98 @@
   }
 
   render();
+
+  /* ---- sheet search ------------------------------------------------------------ */
+  const searchBox = document.getElementById('sheet-search');
+  if (searchBox) searchBox.addEventListener('input', () => {
+    const q = searchBox.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('#sheet .sheet .sh-row').forEach(tr => {
+      const hit = !q || tr.textContent.toLowerCase().includes(q);
+      tr.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    document.getElementById('sheet-count').textContent =
+      q ? shown + ' of ' + M.rows.length + ' rows match' : M.rows.length + ' rows';
+  });
+
+  /* ---- the cleaner playground: the real rules, live on your keystrokes ---------- */
+  const MONTH_N = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+  const CLEANERS = {
+    phone(v) {
+      const d = v.replace(/\D/g, '');
+      if (d.length === 10) return { ok: true, out: '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) + (v.replace(/[\d\s().-]/g, '') ? ' — the extra words move to notes' : '') };
+      if (d.length === 11 && d[0] === '1') return { ok: true, out: '(' + d.slice(1, 4) + ') ' + d.slice(4, 7) + '-' + d.slice(7) };
+      if (!d.length) return { ok: false, out: 'no digits at all — flagged for a human' };
+      return { ok: false, out: 'only ' + d.length + ' digits — flagged, never guessed' };
+    },
+    date(v) {
+      v = v.trim();
+      if (!v) return { ok: false, out: 'empty — flagged' };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return { ok: true, out: v + ' — already unambiguous' };
+      let m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?$/);
+      if (m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 31) {
+        const y = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : '2026';
+        return { ok: true, out: y + '-' + String(m[1]).padStart(2, '0') + '-' + String(m[2]).padStart(2, '0') + ' — month/day assumed, confirmed against emails' };
+      }
+      m = v.toLowerCase().match(/^([a-z]{3,9})\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?$/);
+      if (m && MONTH_N[m[1].slice(0, 3)] && +m[2] >= 1 && +m[2] <= 31) {
+        return { ok: true, out: (m[3] || '2026') + '-' + String(MONTH_N[m[1].slice(0, 3)]).padStart(2, '0') + '-' + String(m[2]).padStart(2, '0') };
+      }
+      return { ok: false, out: '“' + v + '” is ambiguous — goes to human review, like “last spring” did' };
+    },
+    status(v) {
+      const t = v.trim().toLowerCase().replace(/[!.]+$/, '');
+      if (!t || t === '??' || t === '?') return { ok: false, out: 'blank or “??” — reviewed by hand, one row at a time' };
+      const stg = id => M.stages.find(s => s.id === id).label;
+      const exact = M.statusMap.find(s => s.from.toLowerCase().replace(/[!.]+$/, '') === t);
+      if (exact) return { ok: true, out: stg(exact.to) };
+      const fuzzy = M.statusMap.find(s => {
+        const f = s.from.toLowerCase();
+        return f.length > 3 && (t.includes(f) || f.includes(t));
+      });
+      if (fuzzy) return { ok: true, out: stg(fuzzy.to) + ' — fuzzy match, confirmed with you first' };
+      return { ok: false, out: 'not in the mapping yet — it gets added with you, not guessed' };
+    }
+  };
+  function runCleaner(kind) {
+    const inp = document.getElementById('play-' + kind);
+    const out = document.getElementById('out-' + kind);
+    if (!inp || !out) return;
+    const r = CLEANERS[kind](inp.value);
+    out.textContent = r.out;
+    out.className = 'play-out ' + (r.ok ? 'ok' : 'warn');
+  }
+  ['phone', 'date', 'status'].forEach(k => {
+    const inp = document.getElementById('play-' + k);
+    if (inp) { inp.addEventListener('input', () => runCleaner(k)); runCleaner(k); }
+  });
+
+  /* ---- CSV downloads: real files, built locally ----------------------------------- */
+  function downloadCsv(name, header, rows) {
+    const cell = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const csv = [header].concat(rows).map(r => r.map(cell).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 300);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-csv]');
+    if (!b) return;
+    if (b.dataset.csv === 'before') {
+      downloadCsv('the-original-sheet.csv',
+        M.columns.map(c => c.label),
+        M.rows.map(r => M.columns.map(c => r.cells[c.key])));
+    } else {
+      downloadCsv('clean-contacts.csv',
+        ['First name', 'Last name', 'Phone', 'Email', 'Address', 'Stage', 'Service', 'Amount', 'Last contact', 'Next action', 'Source rows'],
+        M.contacts.map(c => [c.first, c.last, c.phone, c.email, c.address,
+          M.stages.find(s => s.id === c.stage).label, c.service, c.dealAmount || '',
+          c.lastContact, c.nextAction, c.sourceRows.map(n => n + 1).join(' + ')]));
+    }
+  });
 
   /* ---- guided tour: seven stops through the story --------------------------- */
   const TOUR_STEPS = [

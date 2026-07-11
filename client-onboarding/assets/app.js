@@ -291,7 +291,7 @@
 
   views.meetings = () => `
     <header class="page-head"><h1>Meetings</h1>
-      <p>Five across the whole project — short, agenda'd, and never a surprise. Invites come from the calendar; this page is the single place to see them all.</p></header>
+      <p>Five across the whole project — short, agenda'd, and never a surprise. The "add to calendar" buttons download a real calendar file.</p></header>
     ${D.meetings.map(m => `
       <section class="card meet ${m.status}">
         <div class="mrow">
@@ -302,7 +302,40 @@
           <div class="t-end mwho">${m.who.map(id => av(person(id), 'av-s')).join('')}</div>
         </div>
         <div class="agenda"><span>Agenda</span><ul>${m.agenda.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+        ${m.status !== 'done' ? `<div class="meet-actions"><button class="btn small" data-act="ics" data-id="${m.id}">⬇ Add to my calendar</button></div>` : ''}
       </section>`).join('')}`;
+
+  views.billing = () => {
+    const B = D.billing;
+    const money = n => '$' + n.toLocaleString('en-US');
+    const paid = B.invoices.filter(i => i.status === 'paid').reduce((a, i) => a + i.amount, 0);
+    const PILL = { paid: ['st-done', 'Paid'], due: ['st-wait', 'Due soon'], upcoming: ['st-up', 'Not yet billed'] };
+    const rows = B.invoices.map(i => `
+      <div class="drow ${i.status === 'paid' ? 'is-done' : ''}">
+        <span class="ftype ${i.status === 'paid' ? 'ok' : ''}">${i.status === 'paid' ? '✓' : '$'}</span>
+        <div class="t-main"><b>${esc(i.label)}</b>
+          <span>${i.pct} of the project · ${i.status === 'paid'
+            ? 'paid ' + fmt(i.date) + (i.method ? ' · ' + esc(i.method) : '')
+            : (i.status === 'due' ? 'due ' + fmt(i.date) + ' (' + rel(i.date) + ')' : 'billed at launch, ' + fmt(i.date))}</span></div>
+        <div class="t-end">
+          <b style="font-size:15px">${money(i.amount)}</b>
+          <span class="pill ${PILL[i.status][0]}">${PILL[i.status][1]}</span>
+          <button class="btn small" data-act="download">Invoice PDF</button>
+        </div>
+      </div>`).join('');
+    return `
+      <header class="page-head"><h1>Billing & invoices</h1>
+        <p>${esc(B.note)}</p></header>
+      <div class="bill-sum">
+        <div class="card bsum"><b>${money(B.total)}</b><span>whole project, fixed</span></div>
+        <div class="card bsum paid"><b>${money(paid)}</b><span>paid so far</span></div>
+        <div class="card bsum"><b>${money(B.total - paid)}</b><span>remaining, milestone-gated</span></div>
+      </div>
+      <section class="card"><h2>The three invoices</h2>${rows}</section>
+      <p class="fine" style="max-width:70ch">A billing question is never awkward — ask it in
+        <a href="#/updates">Updates</a> and the whole team sees it. (In this sample the PDF buttons
+        are decorative; the numbers are the real pattern.)</p>`;
+  };
 
   views.updates = () => {
     const feed = live.replies.map(r => ({ from: 'p4', at: r.at, text: r.text, mine: true })).concat(D.updates);
@@ -407,6 +440,7 @@
     ['tasks', 'Your tasks', 'M5 5h14v14H5zM8.5 12.5l2.5 2.5 4.8-5.3'],
     ['forms', 'Forms & access', 'M6 4h9l3 3v13H6zM9 10h6M9 14h6'],
     ['documents', 'Documents', 'M5 7l3-3h5l3 3h3v12H5zM12 10v6M9 13l3 3 3-3'],
+    ['billing', 'Billing', 'M7 3.5h10V21l-2.5-1.7L12 21l-2.5-1.7L7 21zM10 8.5h4M10 12h4M10 15.5h2'],
     ['approvals', 'Approvals', 'M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7zM9 12l2 2 4-4'],
     ['meetings', 'Meetings', 'M5 6h14v13H5zM5 10h14M9 4v4M15 4v4'],
     ['updates', 'Updates', 'M4 6h16v10H9l-5 4zM8 10h8M8 13h5'],
@@ -523,6 +557,29 @@
       toast('Sent to the whole project team');
     },
     download() { toast('In the live portal this downloads the real file — sample only here'); },
+    ics(el) {
+      const m = byId(D.meetings, el.dataset.id);
+      const dur = parseInt(m.length, 10) || 30;
+      const [h, mi] = m.time.split(':').map(Number);
+      const day = m.date.replace(/-/g, '');
+      const pad = n => String(n).padStart(2, '0');
+      const start = day + 'T' + pad(h) + pad(mi) + '00';
+      const endMin = h * 60 + mi + dur;
+      const end = day + 'T' + pad(Math.floor(endMin / 60)) + pad(endMin % 60) + '00';
+      const escI = s => String(s).replace(/([,;])/g, '\\$1');
+      const txt = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Sample client portal//EN',
+        'BEGIN:VEVENT', 'UID:' + m.id + '@sample-portal', 'DTSTAMP:' + start,
+        'DTSTART:' + start, 'DTEND:' + end,
+        'SUMMARY:' + escI(m.title + ' — ' + D.client.company),
+        'DESCRIPTION:' + escI('Agenda: ' + m.agenda.join(' · ')),
+        'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([txt], { type: 'text/calendar' }));
+      a.download = m.title.replace(/[^\w]+/g, '-').toLowerCase() + '.ics';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 300);
+      toast('Calendar file downloaded — open it and the meeting lands in your calendar');
+    },
     tour() { TOUR.start(); },
     close() { closeDrawer(); },
     'open-side'() { $('#side').classList.add('open'); $('#sbk').hidden = false; },

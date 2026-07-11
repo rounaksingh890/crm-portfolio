@@ -296,10 +296,39 @@
     const openN = all.filter(k => !HSV.taskDone(k)).length;
 
     return `<div class="page view-in">
-      ${UI.pageHead('Tasks', 'The team’s to-do list. Tick things off — the dashboard count updates with you.')}
+      ${UI.pageHead('Tasks<span class="ph-count">' + openN + ' to do</span>',
+        'The team’s to-do list. Tick things off — the dashboard count updates with you.',
+        `<button class="btn btn-primary" data-action="create-task-open">Create task</button>`)}
       <div class="chips">${chip('open', 'To do · ' + openN)}${chip('done', 'Done · ' + (all.length - openN))}${chip('all', 'Everything')}</div>
       ${body}
     </div>`;
+  };
+
+  HSV.actions['create-task-open'] = function () {
+    const D = HSV.D();
+    const plus2 = new Date(HSV.dt(HSV.TODAY).getTime() + 2 * 864e5).toISOString().slice(0, 10);
+    UI.modal('Create task', `
+      <label>What needs doing?<input class="inp" id="nt-title" placeholder="e.g. Send the follow-up quote"></label>
+      <div class="form-grid">
+        <label>Type<select class="sel" id="nt-type" style="width:100%"><option>To-do</option><option>Call</option><option>Email</option></select></label>
+        <label>Due<input class="inp" id="nt-due" type="date" value="${plus2}"></label>
+        <label class="wide">Owner<select class="sel" id="nt-owner" style="width:100%">${D.owners.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></label>
+        <label class="wide">About (optional)<select class="sel" id="nt-contact" style="width:100%"><option value="">Nobody in particular</option>${D.contacts.map(c => `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+      </div>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="create-task-save">Create task</button>`);
+  };
+  HSV.actions['create-task-save'] = function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const title = v('nt-title').trim();
+    if (!title) { document.getElementById('nt-title').focus(); return; }
+    const cid = v('nt-contact');
+    HSV.D().tasks.unshift({ id: 'k' + Date.now(), title, due: v('nt-due') || HSV.TODAY,
+      type: v('nt-type') || 'To-do', owner: v('nt-owner'),
+      related: cid ? { kind: 'contact', id: cid } : null, done: false });
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Task created — the dashboard count moved with it');
   };
 
   HSV.actions['toggle-task'] = function (el) {
@@ -346,9 +375,36 @@
       <div class="card">${past.map(row).join('')}</div></div>` : '';
 
     return `<div class="page view-in">
-      ${UI.pageHead('Meetings', upcoming.length + ' coming up. Booked through the calendar link, confirmed automatically.')}
+      ${UI.pageHead('Meetings<span class="ph-count">' + upcoming.length + ' coming up</span>',
+        'Booked through the calendar link, confirmed automatically.',
+        `<button class="btn btn-primary" data-action="book-meeting-open">Book a meeting</button>`)}
       ${body || `<div class="card">${UI.empty('calendar', 'Nothing booked', 'The calendar ahead is clear.')}</div>`}
       ${pastHtml}
     </div>`;
+  };
+
+  HSV.actions['book-meeting-open'] = function () {
+    const D = HSV.D();
+    const plus3 = new Date(HSV.dt(HSV.TODAY).getTime() + 3 * 864e5).toISOString().slice(0, 10);
+    UI.modal('Book a meeting', `
+      <label>What's it about?<input class="inp" id="nm-title" placeholder="e.g. Quote walkthrough"></label>
+      <div class="form-grid">
+        <label>With<select class="sel" id="nm-contact" style="width:100%">${D.contacts.map(c => `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+        <label>Host<select class="sel" id="nm-owner" style="width:100%">${D.owners.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></label>
+        <label>Date<input class="inp" id="nm-date" type="date" value="${plus3}"></label>
+        <label>Time<input class="inp" id="nm-time" type="time" value="10:00"></label>
+      </div>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="book-meeting-save">Book it</button>`);
+  };
+  HSV.actions['book-meeting-save'] = function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const title = v('nm-title').trim();
+    if (!title) { document.getElementById('nm-title').focus(); return; }
+    HSV.D().meetings.push({ id: 'm' + Date.now(), title, date: v('nm-date') || HSV.TODAY,
+      time: v('nm-time') || '10:00', contactId: v('nm-contact'), owner: v('nm-owner'), kind: 'Meeting' });
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Booked — it\'s on the schedule and the dashboard');
   };
 })();

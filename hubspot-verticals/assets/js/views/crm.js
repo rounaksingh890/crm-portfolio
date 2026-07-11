@@ -209,7 +209,9 @@
         </div>
       </section>
       <section class="card props-card">
-        <h3>About this contact <button class="assoc-add" data-action="all-props" data-id="${c.id}">View all properties</button></h3>
+        <h3>About this contact
+          <button class="assoc-add" data-action="edit-contact-open" data-id="${c.id}" style="margin-left:auto">Edit</button>
+          <button class="assoc-add" data-action="all-props" data-id="${c.id}" style="margin-left:10px">View all</button></h3>
         <dl class="props">
           <div><dt>Email</dt><dd><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></dd></div>
           <div><dt>Phone</dt><dd>${esc(c.phone)}</dd></div>
@@ -337,6 +339,103 @@
       { d: HSV.TODAY, t: el.dataset.kind, text: 'Logged from the record page (sample action).' });
     HSV.render();
     UI.toast(kindText);
+  };
+
+  /* ------------------------------------------------------------- activity feed */
+  HSV.views.activity = function () {
+    const D = HSV.D(), q = HSV.state.q;
+    const type = q.type || '', ownerF = q.aowner || '';
+
+    let evs = [];
+    D.contacts.forEach(c => HSV.contactTimeline(c).forEach(ev => evs.push({ d: ev.d, t: ev.t, text: ev.text, c })));
+    const counts = { call: 0, email: 0, meeting: 0, note: 0 };
+    evs.forEach(ev => { if (counts[ev.t] !== undefined) counts[ev.t]++; });
+    evs = evs.filter(ev => (!type || ev.t === type) && (!ownerF || ev.c.owner === ownerF))
+      .sort((a, b) => b.d.localeCompare(a.d));
+
+    const chip = (v, label, n) => `<button class="chip ${type === v ? 'on' : ''}" data-action="act-type" data-v="${v}">${label}${n !== undefined ? ' · ' + n : ''}</button>`;
+    const chips = `<div class="chips">
+      ${chip('', 'Everything', evs.length && !type ? evs.length : Object.values(counts).reduce((a, b) => a + b, 0))}
+      ${chip('call', 'Calls', counts.call)}${chip('email', 'Emails', counts.email)}
+      ${chip('meeting', 'Meetings', counts.meeting)}${chip('note', 'Notes', counts.note)}
+    </div>`;
+
+    const ownerSel = `<select class="sel" data-qkey="aowner">
+      <option value="">Any owner</option>${D.owners.map(o =>
+        `<option value="${o.id}" ${ownerF === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
+
+    const rows = evs.map(ev => `
+      <a class="li-row" href="${HSV.href('contact', ev.c.id)}">
+        <span class="tl-node t-${esc(ev.t)}" style="width:28px;height:28px">${UI.icon(TL_ICON[ev.t] || 'note')}</span>
+        <span class="grow"><span class="b clip">${esc(ev.text)}</span>
+        <small>${esc(cap(ev.t))} · with ${esc(HSV.cName(ev.c))} · ${esc(HSV.owner(ev.c.owner).name.split(' ')[0])}</small></span>
+        <span class="end"><small>${esc(HSV.fmtDate(ev.d))}</small></span>
+      </a>`).join('') || UI.empty('clock', 'Nothing here', 'Try another type or owner.');
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Activity feed<span class="ph-count">' + evs.length + ' activities</span>',
+        'Every call, email, meeting and note across the whole CRM, newest first. Log something on any record and it appears here instantly.',
+        `<button class="btn btn-primary" data-action="log-activity-open">Log activity</button>`)}
+      <div class="toolbar">${ownerSel}<span class="count-note">Click any row to open the person behind it</span></div>
+      ${chips}
+      <div class="card list-card">${rows}</div>
+    </div>`;
+  };
+  HSV.actions['act-type'] = function (el) {
+    HSV.setQuery({ type: el.dataset.v });
+    HSV.render();
+  };
+  HSV.actions['log-activity-open'] = function () {
+    const D = HSV.D();
+    UI.modal('Log an activity', `
+      <label>Type<select class="sel" id="la-type" style="width:100%">
+        <option value="call">Call</option><option value="email">Email</option>
+        <option value="meeting">Meeting</option><option value="note">Note</option></select></label>
+      <label>With<select class="sel" id="la-contact" style="width:100%">${D.contacts.map(c =>
+        `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+      <label>What happened?<textarea class="txa" id="la-text" placeholder="e.g. Called about the quote — wants to start next month."></textarea></label>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="log-activity-save">Log it</button>`);
+  };
+  HSV.actions['log-activity-save'] = function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const text = v('la-text').trim();
+    if (!text) { document.getElementById('la-text').focus(); return; }
+    const notes = HSV.ov().notes, cid = v('la-contact');
+    (notes[cid] = notes[cid] || []).unshift({ d: HSV.TODAY, t: v('la-type') || 'note', text });
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Logged — it\'s on the feed and on ' + HSV.cName(HSV.contact(cid)) + '\'s record');
+  };
+
+  /* ---- edit contact properties (real mutation, everything follows) ------------- */
+  HSV.actions['edit-contact-open'] = function (el) {
+    const c = HSV.contact(el.dataset.id), D = HSV.D();
+    UI.modal('Edit ' + HSV.cName(c), `
+      <div class="form-grid">
+        <label class="wide">Email<input class="inp" id="ec-email" value="${esc(c.email)}"></label>
+        <label>Phone<input class="inp" id="ec-phone" value="${esc(c.phone)}"></label>
+        <label>City<input class="inp" id="ec-city" value="${esc(c.city)}"></label>
+        <label class="wide">Job title / label<input class="inp" id="ec-title" value="${esc(c.title || '')}"></label>
+        <label>Lifecycle stage<select class="sel" id="ec-lc" style="width:100%">${D.lifecycles.map(l =>
+          `<option ${l === c.lifecycle ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
+        <label>Owner<select class="sel" id="ec-owner" style="width:100%">${D.owners.map(o =>
+          `<option value="${o.id}" ${o.id === c.owner ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
+      </div>
+      <p class="small muted">Edits are real: the lists, the lifecycle counts and the reports all follow. Refresh the page and the sample resets.</p>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="edit-contact-save" data-id="${c.id}">Save changes</button>`);
+  };
+  HSV.actions['edit-contact-save'] = function (el) {
+    const c = HSV.contact(el.dataset.id);
+    const v = id => (document.getElementById(id) || {}).value || '';
+    c.email = v('ec-email').trim(); c.phone = v('ec-phone').trim();
+    c.city = v('ec-city').trim(); c.title = v('ec-title').trim();
+    c.lifecycle = v('ec-lc'); c.owner = v('ec-owner');
+    c.lastTouch = HSV.TODAY;
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Saved — every screen just picked it up');
   };
 
   /* ------------------------------------------------------------- lists */

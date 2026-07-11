@@ -244,5 +244,19 @@ window.OB = {
       a: 'Yes — the build is deliberately extendable. We\'d rather launch a solid core on time than a wobbly everything.' },
     { q: 'Is our patient data safe with you?',
       a: 'We work under the confidentiality terms in the proposal, access only the systems on your Access list, and you can revoke any of it in one click. Data never leaves your own accounts.' }
-  ]
+  ],
+
+  /* ---- billing: fixed price, milestone-based, no surprises ---------------------- */
+  billing: {
+    total: 5800,
+    note: 'Fixed price, split across three milestones. Nothing is billed before its milestone is actually reached — and the migration milestone only counts once you\'ve reviewed the cleaned records.',
+    invoices: [
+      { id: 'i1', label: 'Deposit — project start', pct: '30%', amount: 1740,
+        status: 'paid', date: '2026-06-23', method: 'Card ending 4417' },
+      { id: 'i2', label: 'Milestone — migration complete & reviewed by you', pct: '35%', amount: 2030,
+        status: 'due', date: '2026-07-11', method: null },
+      { id: 'i3', label: 'Final — launch, training & handover', pct: '35%', amount: 2030,
+        status: 'upcoming', date: '2026-07-28', method: null }
+    ]
+  }
 };

@@ -15,6 +15,7 @@
         { icon: 'building', label: 'Companies', view: 'companies' },
         { icon: 'deal', label: t.deals, view: 'deals' },
         { icon: 'list', label: 'Lists', view: 'lists' },
+        { icon: 'clock', label: 'Activity feed', view: 'activity' },
         { icon: 'task', label: 'Tasks', view: 'tasks', sub: HSV.openTasks().length + ' to do' },
         { icon: 'calendar', label: 'Meetings', view: 'meetings' },
       ] },
@@ -29,6 +30,7 @@
       ] },
       settings: { label: 'Settings', items: [
         { icon: 'pencil', label: 'Custom fields', view: 'properties' },
+        { icon: 'deal', label: 'Pipeline & stages', view: 'pipeline' },
         { icon: 'grid', label: 'Connected apps', view: 'integrations' },
         { icon: 'users', label: 'Users & teams', view: 'users' },
         { icon: 'help', label: 'About this sample', view: 'about' },
@@ -38,12 +40,12 @@
 
   const GROUP_OF = {
     contacts: 'crm', contact: 'crm', companies: 'crm', company: 'crm',
-    deals: 'crm', deal: 'crm', tasks: 'crm', meetings: 'crm', lists: 'crm',
+    deals: 'crm', deal: 'crm', tasks: 'crm', meetings: 'crm', lists: 'crm', activity: 'crm',
     inbox: 'conv', tickets: 'conv', ticket: 'conv',
     campaigns: 'mkt', campaign: 'mkt', forms: 'mkt', form: 'mkt',
     workflows: 'mkt', workflow: 'mkt',
     reports: 'reports', report: 'reports',
-    properties: 'settings', integrations: 'settings', users: 'settings', about: 'settings',
+    properties: 'settings', integrations: 'settings', users: 'settings', pipeline: 'settings', about: 'settings',
   };
 
   /* ------------------------------------------------------------- shell HTML */

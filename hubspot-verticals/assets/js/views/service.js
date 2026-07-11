@@ -44,7 +44,9 @@
       }), { emptyIcon: 'ticket' });
 
     return `<div class="page view-in">
-      ${UI.pageHead('Help desk', 'Every question and problem, tracked from “new” to “closed”. Open one to read the conversation.')}
+      ${UI.pageHead('Help desk<span class="ph-count">' + D.tickets.filter(t => HSV.ticketStatus(t) !== 'Closed').length + ' open</span>',
+        'Every question and problem, tracked from “new” to “closed”. Open one to read the conversation.',
+        `<button class="btn btn-primary" data-action="create-ticket-open">Create ticket</button>`)}
       <div class="chips">${chips}</div>
       ${table}
     </div>`;
@@ -54,6 +56,36 @@
   HSV.actions['ticket-filter'] = function (el) {
     HSV.setQuery({ status: el.dataset.v });
     HSV.render();
+  };
+  HSV.actions['create-ticket-open'] = function () {
+    const D = HSV.D();
+    const cats = [...new Set(D.tickets.map(t => t.category))];
+    UI.modal('Create ticket', `
+      <label>Subject<input class="inp" id="nk-subject" placeholder="e.g. Question about last month's invoice"></label>
+      <div class="form-grid">
+        <label>From<select class="sel" id="nk-contact" style="width:100%">${D.contacts.map(c => `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+        <label>Priority<select class="sel" id="nk-prio" style="width:100%"><option>Low</option><option selected>Medium</option><option>High</option></select></label>
+        <label class="wide">Category<select class="sel" id="nk-cat" style="width:100%">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select></label>
+        <label class="wide">What did they say?<textarea class="txa" id="nk-desc" placeholder="Their message, in their words…"></textarea></label>
+      </div>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="create-ticket-save">Create ticket</button>`);
+  };
+  HSV.actions['create-ticket-save'] = function () {
+    const D = HSV.D();
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const subject = v('nk-subject').trim();
+    if (!subject) { document.getElementById('nk-subject').focus(); return; }
+    const cid = v('nk-contact');
+    const t = { id: 't' + Date.now(), subject, status: 'New', priority: v('nk-prio') || 'Medium',
+      contactId: cid, owner: HSV.contact(cid).owner, created: HSV.TODAY,
+      category: v('nk-cat') || 'General',
+      desc: v('nk-desc').trim() || 'Logged by hand during this sample session.',
+      thread: v('nk-desc').trim() ? [{ from: 'them', at: HSV.TODAY + ' 09:00', text: v('nk-desc').trim() }] : [] };
+    D.tickets.unshift(t);
+    UI.closeModal();
+    HSV.go(HSV.href('ticket', t.id));
+    UI.toast('Ticket created — the help-desk count and the dashboard follow');
   };
 
   /* ------------------------------------------------------------- ticket record */

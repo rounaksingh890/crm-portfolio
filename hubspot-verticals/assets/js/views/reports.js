@@ -57,7 +57,7 @@
     const cards = D.reports.map(r => {
       const spec = reportSpec(r);
       return `<div class="card rep-card" data-href="${HSV.href('report', r.id)}" tabindex="0">
-        <h3>${esc(r.name)}</h3>
+        <h3>${esc(r.name)} ${r.custom ? UI.pill('built this session', 't-orange') : ''}</h3>
         <p class="desc">${esc(r.desc)}</p>
         <div class="chart-scroll slim-scroll">${spec.chart()}</div>
       </div>`;
@@ -75,11 +75,45 @@
         <div class="chart-scroll slim-scroll">${HSV.charts.line(M.labels, M.visitors, { color: '#4f7cd1' })}</div></div>`;
 
     return `<div class="page view-in">
-      ${UI.pageHead('Reports', 'Six saved reports plus the monthly numbers. Every chart is drawn from the same records as the rest of the app — click one for the table behind it.')}
+      ${UI.pageHead('Reports<span class="ph-count">' + D.reports.length + ' saved</span>',
+        'Every chart is drawn from the same records as the rest of the app — click one for the table behind it, or build your own.',
+        `<button class="btn btn-primary" data-action="create-report-open">Create report</button>`)}
       <div class="rep-grid">${cards}</div>
       <h2 style="font-size:15px;margin:26px 2px 12px">The month-by-month numbers</h2>
       <div class="grid-3">${extra}</div>
     </div>`;
+  };
+
+  /* ---- report builder: pick a question, get a live chart ------------------------ */
+  const BUILD_KINDS = [
+    ['line',     'Money coming in, by month'],
+    ['bar',      'New contacts, by month'],
+    ['donut',    'Where contacts come from (share)'],
+    ['funnel',   'How far things get (funnel)'],
+    ['ownerbar', 'Open value by team member'],
+    ['catbar',   'Ticket load by category']
+  ];
+  HSV.actions['create-report-open'] = function () {
+    UI.modal('Create a report', `
+      <label>Name it<input class="inp" id="nr-name" placeholder="e.g. Where do our best leads come from?"></label>
+      <label>What should it answer?<select class="sel" id="nr-kind" style="width:100%">
+        ${BUILD_KINDS.map(k => `<option value="${k[0]}">${esc(k[1])}</option>`).join('')}</select></label>
+      <p class="small muted">The chart is drawn live from the sample records the moment you save —
+        same data as every other screen, so it can never disagree with them.</p>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="create-report-save">Create report</button>`);
+  };
+  HSV.actions['create-report-save'] = function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const kind = v('nr-kind') || 'line';
+    const name = v('nr-name').trim() || BUILD_KINDS.find(k => k[0] === kind)[1];
+    const r = { id: 'r' + Date.now(), name,
+      desc: 'Custom report built during this session — refresh and the sample resets.',
+      type: kind, custom: true };
+    HSV.D().reports.push(r);
+    UI.closeModal();
+    HSV.go(HSV.href('report', r.id));
+    UI.toast('Report created — chart and table, drawn live');
   };
 
   HSV.views.report = function () {

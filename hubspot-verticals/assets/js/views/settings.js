@@ -74,6 +74,38 @@
     HSV.ui.toast(HSV.intOn(name) ? name + ' connected' : name + ' disconnected');
   };
 
+  /* ------------------------------------------------------------- pipeline & stages */
+  HSV.views.pipeline = function () {
+    const D = HSV.D(), t = D.terms;
+    const rows = D.stages.map((s, i) => `
+      <div class="stage-edit">
+        <span class="se-n">${i + 1}</span>
+        <input class="inp" data-stage-input="${s.id}" value="${esc(s.label)}" aria-label="Stage ${i + 1} name">
+        <span class="pill ${s.prob === 100 ? 't-green' : s.prob === 0 ? 't-red' : 't-blue'}">${s.prob}% likely</span>
+        <span class="small muted num">${D.deals.filter(d => HSV.dealStageId(d) === s.id).length} ${esc(t.deals.toLowerCase())} in it now</span>
+      </div>`).join('');
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Pipeline & stages<span class="ph-count">' + D.stages.length + ' stages</span>',
+        'The stages every ' + esc(t.deal.toLowerCase()) + ' moves through. Rename one and save — the board, the dashboard, the reports and every record follow instantly.',
+        `<button class="btn btn-primary" data-action="pipeline-save">Save stage names</button>`)}
+      <div class="card" style="padding:8px 18px">${rows}</div>
+      <p class="small muted" style="margin-top:12px;max-width:72ch">Win chances drive the weighted pipeline numbers. In the real build they're set with you
+        during configuration — and changing them re-weights every forecast, the same way renaming works here.</p>
+    </div>`;
+  };
+  HSV.actions['pipeline-save'] = function () {
+    const D = HSV.D();
+    let changed = 0;
+    document.querySelectorAll('[data-stage-input]').forEach(inp => {
+      const s = D.stages.find(x => x.id === inp.dataset.stageInput);
+      const val = inp.value.trim();
+      if (s && val && val !== s.label) { s.label = val; changed++; }
+    });
+    HSV.render();
+    HSV.ui.toast(changed ? 'Renamed ' + changed + ' stage' + (changed > 1 ? 's' : '') + ' — the whole portal followed' : 'Nothing changed');
+  };
+
   /* ------------------------------------------------------------- users & teams */
   HSV.views.users = function () {
     const D = HSV.D(), t = D.terms;

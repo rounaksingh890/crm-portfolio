@@ -855,6 +855,21 @@ th.sortable.s-on .sc { opacity: 1; color: var(--link); }
 .sn-x:hover { opacity: 1; background: rgba(0,0,0,.06); }
 .sn-x svg { width: 11px; height: 11px; }
 
+/* ---- pipeline editor ------------------------------------------------------------------ */
+.stage-edit {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0;
+}
+.stage-edit + .stage-edit { border-top: 1px solid var(--border-soft); }
+.stage-edit .se-n {
+  width: 24px; height: 24px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--ink-2);
+  border-radius: 50%; font: 600 11.5px/1 var(--font);
+}
+.stage-edit .inp { max-width: 320px; }
+.stage-edit .num { margin-left: auto; white-space: nowrap; }
+
 /* ---- misc fidelity ------------------------------------------------------------------- */
 .kpi { border-color: var(--border); box-shadow: none; border-radius: var(--r-sm); }
 .assoc-add { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--link); background: none; border: 0; cursor: pointer; }

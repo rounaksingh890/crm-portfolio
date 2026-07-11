@@ -307,6 +307,24 @@ a.badge:hover { background: #ffedcb; text-decoration: none; }
 .fate p { font-size: 13.5px; color: var(--ink-2); }
 .fate.arch { border-style: dashed; }
 
+/* ---- sheet tools, CSV row, cleaner playground ----------------------------------------------------- */
+.mig-tools { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.mig-tools .search { max-width: 360px; }
+.csv-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.play { padding: 20px 22px; display: grid; gap: 16px; }
+.play-row {
+  display: grid; grid-template-columns: 220px minmax(180px, 300px) 30px 1fr;
+  gap: 12px; align-items: center;
+}
+.play-row label { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.play-arr { text-align: center; color: var(--muted); font-size: 17px; }
+.play-out {
+  font-size: 13.5px; font-weight: 600; padding: 8px 13px; border-radius: 9px; min-height: 36px;
+  display: flex; align-items: center;
+}
+.play-out.ok { background: var(--good-bg); color: var(--good); }
+.play-out.warn { background: #fdf3e0; color: #8a6116; }
+
 /* ---- guided tour + welcome ---------------------------------------------------------------------- */
 .tour-btn {
   padding: 6px 13px; border-radius: 999px; white-space: nowrap;
@@ -355,6 +373,8 @@ a.badge:hover { background: #ffedcb; text-decoration: none; }
 /* ---- phones ------------------------------------------------------------------------------------ */
 @media (max-width: 760px) {
   .tour-btn { order: 2; margin-left: auto; }
+  .play-row { grid-template-columns: 1fr; gap: 6px; }
+  .play-arr { display: none; }
   .topbar { flex-wrap: wrap; gap: 8px 14px; padding: 10px 14px; }
   .badge { display: none; }
   .secnav { order: 3; width: 100%; }

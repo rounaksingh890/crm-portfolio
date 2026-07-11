@@ -665,4 +665,96 @@
     syncQ();
     HSV.render();
   });
+
+  /* ==========================================================================
+     FORECAST — weighted projections, recomputed live. Drag a deal to a new
+     stage on the board and every number here moves.
+     ========================================================================== */
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  HSV.views.forecast = function () {
+    const D = HSV.D(), t = D.terms;
+    const open = HSV.dealsOpen();
+    const weighted = d => d.amount * HSV.stage(HSV.dealStageId(d)).prob / 100;
+    const wTotal = open.reduce((a, d) => a + weighted(d), 0);
+
+    // won so far this quarter (Jul–Sep 2026)
+    const inQ = iso => iso >= '2026-07-01' && iso <= '2026-09-30';
+    const wonQ = HSV.dealsWon().filter(d => inQ(d.close));
+
+    const kpis = [
+      { label: 'Open pipeline (best case)', value: HSV.money(HSV.sum(open), true), sub: open.length + ' ' + t.deals.toLowerCase() + ' still open', href: HSV.href('deals') },
+      { label: 'Weighted forecast', value: HSV.money(wTotal, true), sub: 'amount × stage chance', href: HSV.href('forecast') },
+      { label: 'Won this quarter', value: HSV.money(HSV.sum(wonQ), true), sub: wonQ.length + ' closed since July 1', href: HSV.href('deals', null, { mode: 'table' }) },
+      { label: 'Closing this month', value: HSV.money(open.filter(d => d.close.slice(0, 7) === '2026-07').reduce((a, d) => a + weighted(d), 0), true), sub: 'weighted, July', href: HSV.href('forecast') },
+    ].map(UI.kpi).join('');
+
+    // weighted by close month
+    const byMonth = {};
+    open.forEach(d => {
+      const k = d.close.slice(0, 7);
+      (byMonth[k] = byMonth[k] || { w: 0, best: 0, n: 0 });
+      byMonth[k].w += weighted(d); byMonth[k].best += d.amount; byMonth[k].n++;
+    });
+    const monthKeys = Object.keys(byMonth).sort();
+    const monthRows = monthKeys.map(k => ({
+      label: MONTH_NAMES[+k.slice(5) - 1] + ' ' + k.slice(0, 4),
+      value: Math.round(byMonth[k].w),
+      sub: 'best ' + HSV.money(byMonth[k].best, true) + ' · ' + byMonth[k].n + ' ' + (byMonth[k].n === 1 ? t.deal.toLowerCase() : t.deals.toLowerCase()),
+    }));
+
+    // by stage (open stages only)
+    const stageRows = D.stages
+      .filter(s => s.prob > 0 && s.prob < 100)
+      .map(s => {
+        const list = open.filter(d => HSV.dealStageId(d) === s.id);
+        return { cells: [
+          `<span class="cell-main"><span>${esc(s.label)}</span></span>`,
+          String(list.length),
+          `<b class="num">${HSV.money(HSV.sum(list))}</b>`,
+          s.prob + '%',
+          `<b class="num">${HSV.money(HSV.sum(list) * s.prob / 100)}</b>`,
+        ] };
+      });
+
+    // by owner (weighted)
+    const ownerRows = D.owners.map(o => ({
+      label: o.name, color: o.color,
+      value: Math.round(open.filter(d => d.owner === o.id).reduce((a, d) => a + weighted(d), 0)),
+    })).filter(x => x.value > 0).sort((a, b) => b.value - a.value);
+
+    // deal-level detail
+    const dealRows = open.slice().sort((a, b) => a.close.localeCompare(b.close)).map(d => {
+      const s = HSV.stage(HSV.dealStageId(d));
+      return { href: HSV.href('deal', d.id), cells: [
+        `<span class="cell-main"><span>${esc(d.name)}</span></span>`,
+        UI.stagePill(HSV.dealStageId(d)),
+        esc(HSV.fmtDate(d.close, false)) + ' <small class="muted">(' + esc(HSV.rel(d.close)) + ')</small>',
+        `<span class="num">${HSV.money(d.amount)}</span>`,
+        s.prob + '%',
+        `<b class="num">${HSV.money(weighted(d))}</b>`,
+      ] };
+    });
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Forecast<span class="ph-count">weighted, live</span>',
+        'Every figure here is amount × stage chance, recomputed as you work. Drag a ' + esc(t.deal.toLowerCase()) + ' to a new stage on the board and come back — the forecast will have moved.')}
+      <div class="kpis">${kpis}</div>
+      <div class="grid-2">
+        <section class="card chart-card">
+          <div class="cc-head"><h3>Weighted by close month</h3><span class="cc-sub">what lands when</span>
+            <a href="${HSV.href('deals')}">Open the board</a></div>
+          ${HSV.charts.hbars(monthRows, { money: true })}
+        </section>
+        <section class="card chart-card">
+          <div class="cc-head"><h3>Weighted by owner</h3><span class="cc-sub">who carries the number</span>
+            <a href="${HSV.href('users')}">Users & teams</a></div>
+          ${HSV.charts.hbars(ownerRows, { money: true, href: (it) => HSV.href('deals', null, { owner: D.owners.find(o => o.name === it.label).id }) })}
+        </section>
+      </div>
+      <h2 style="font-size:15px;margin:24px 2px 10px">Stage by stage</h2>
+      ${UI.table(['Stage', t.deals, 'Total', 'Chance', 'Weighted'], stageRows)}
+      <h2 style="font-size:15px;margin:24px 2px 10px">Every open ${esc(t.deal.toLowerCase())}, by close date</h2>
+      ${UI.table(['Name', 'Stage', 'Close', 'Amount', 'Chance', 'Weighted'], dealRows, { emptyIcon: 'deal' })}
+    </div>`;
+  };
 })();

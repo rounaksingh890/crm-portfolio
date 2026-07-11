@@ -254,4 +254,160 @@
     const back = document.getElementById('conv-back');
     if (back && window.matchMedia('(max-width: 900px)').matches) back.style.display = '';
   });
+
+  /* ==========================================================================
+     CALLS — the phone-system log, with a working sample-recording player.
+     ========================================================================== */
+  const OUT_TONE = { Connected: 't-green', Voicemail: 't-yellow', 'No answer': 't-gray', Missed: 't-red' };
+  const clock = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+
+  function waveSvg(seed) {
+    let bars = '';
+    for (let i = 0; i < 36; i++) {
+      const h = 4 + ((seed.charCodeAt(i % seed.length) * (i + 3)) % 17);
+      bars += `<rect x="${i * 3.2}" y="${(22 - h) / 2}" width="2" height="${h}" rx="1"/>`;
+    }
+    return `<svg viewBox="0 0 116 22" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>`;
+  }
+
+  HSV.views.calls = function () {
+    const D = HSV.D(), q = HSV.state.q;
+    const outcomeF = q.out || '', ownerF = q.cowner || '';
+    const all = D.calls;
+    const connected = all.filter(l => l.outcome === 'Connected');
+    const kpis = [
+      { label: 'Calls logged', value: all.length, sub: 'synced from the phone system', href: HSV.href('calls') },
+      { label: 'Connected rate', value: Math.round(100 * connected.length / all.length) + '%', sub: connected.length + ' of ' + all.length, href: HSV.href('calls') },
+      { label: 'Talk time', value: all.reduce((a, l) => a + l.mins, 0) + ' min', sub: 'this fortnight', href: HSV.href('calls') },
+      { label: 'Recordings', value: all.filter(l => l.rec).length, sub: 'playable below', href: HSV.href('calls') },
+    ].map(UI.kpi).join('');
+
+    const outcomes = [...new Set(all.map(l => l.outcome))];
+    const chips = ['', ...outcomes].map(o => {
+      const n = o ? all.filter(l => l.outcome === o).length : all.length;
+      return `<button class="chip ${outcomeF === o ? 'on' : ''}" data-action="call-filter" data-v="${esc(o)}">${o || 'All'} · ${n}</button>`;
+    }).join('');
+    const ownerSel = `<select class="sel" data-qkey="cowner">
+      <option value="">Any owner</option>${D.owners.map(o =>
+        `<option value="${o.id}" ${ownerF === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
+
+    const rows = all
+      .filter(l => (!outcomeF || l.outcome === outcomeF) && (!ownerF || l.owner === ownerF))
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .map(l => {
+        const c = HSV.contact(l.contactId);
+        const dur = Math.max(30, l.mins * 60);
+        const player = l.rec ? `
+          <div class="cplayer" data-cp="${l.id}">
+            <button class="cp-btn" data-action="call-play" data-id="${l.id}" data-dur="${dur}" aria-label="Play sample recording">▶</button>
+            <div class="cp-wave" data-action="call-seek" data-id="${l.id}" data-dur="${dur}" role="slider" aria-label="Seek">
+              ${waveSvg(l.id + l.contactId)}
+              <div class="cp-fill" data-cp-fill="${l.id}">${waveSvg(l.id + l.contactId)}</div>
+            </div>
+            <span class="cp-time num" data-cp-time="${l.id}">0:00 / ${clock(dur)}</span>
+            <span class="cp-note">sample · silent, sped up</span>
+          </div>` : '';
+        return `<div class="call-row">
+          <span class="cl-dir ${l.dir}" title="${l.dir === 'out' ? 'Outgoing' : 'Incoming'}">${l.dir === 'out' ? '↗' : '↙'}</span>
+          ${UI.avatar(HSV.cName(c), HSV.owner(c.owner).color)}
+          <div class="grow">
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <a class="b" href="${HSV.href('contact', c.id)}">${esc(HSV.cName(c))}</a>
+              ${UI.pill(l.outcome, OUT_TONE[l.outcome] || 't-gray')}
+              ${l.mins ? `<span class="small muted num">${l.mins} min</span>` : ''}
+              <span class="small muted" style="margin-left:auto">${esc(HSV.fmtTime(l.at))}</span>
+            </div>
+            <p class="cl-note">${esc(l.note)}</p>
+            ${player}
+          </div>
+          <span class="cl-owner">${UI.ownerChip(l.owner)}</span>
+        </div>`;
+      }).join('') || `<div class="card">${UI.empty('phone', 'No calls match', 'Try another filter.')}</div>`;
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Calls<span class="ph-count">' + all.length + ' logged</span>',
+        'Every call, in and out, with its outcome and notes — and sample recordings you can actually play.',
+        `<button class="btn btn-primary" data-action="log-call-open">Log a call</button>`)}
+      <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));max-width:680px">${kpis}</div>
+      <div class="toolbar"><div class="chips" style="margin:0">${chips}</div>${ownerSel}</div>
+      <div class="card" style="padding:4px 0">${rows}</div>
+    </div>`;
+  };
+
+  HSV.actions['call-filter'] = function (el) {
+    HSV.setQuery({ out: el.dataset.v });
+    HSV.render();
+  };
+
+  /* ---- the player: silent sample playback, honest about it ------------------- */
+  let cpTimer = null, cpId = null;
+  const cpPos = {};
+  function cpStop() {
+    if (cpTimer) { clearInterval(cpTimer); cpTimer = null; }
+    const btn = cpId && document.querySelector('[data-action="call-play"][data-id="' + cpId + '"]');
+    if (btn) btn.textContent = '▶';
+    cpId = null;
+  }
+  function cpPaint(id, dur) {
+    const fill = document.querySelector('[data-cp-fill="' + id + '"]');
+    const time = document.querySelector('[data-cp-time="' + id + '"]');
+    if (!fill || !time) { cpStop(); return; }
+    const p = cpPos[id] || 0;
+    fill.style.clipPath = 'inset(0 ' + (100 - p * 100).toFixed(1) + '% 0 0)';
+    time.textContent = clock(p * dur) + ' / ' + clock(dur);
+  }
+  HSV.actions['call-play'] = function (el) {
+    const id = el.dataset.id, dur = +el.dataset.dur;
+    if (cpId === id) { cpStop(); return; }           // pause
+    cpStop();
+    cpId = id;
+    el.textContent = '⏸';
+    if ((cpPos[id] || 0) >= 1) cpPos[id] = 0;
+    cpTimer = setInterval(function () {
+      cpPos[id] = (cpPos[id] || 0) + 0.1 / 12;       // full bar in ~12 seconds
+      if (cpPos[id] >= 1) { cpPos[id] = 1; cpPaint(id, dur); cpStop(); return; }
+      cpPaint(id, dur);
+    }, 100);
+  };
+  HSV.actions['call-seek'] = function (el, e) {
+    const id = el.dataset.id, dur = +el.dataset.dur;
+    const r = el.getBoundingClientRect();
+    cpPos[id] = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    cpPaint(id, dur);
+  };
+
+  HSV.actions['log-call-open'] = function () {
+    const D = HSV.D();
+    UI.modal('Log a call', `
+      <div class="form-grid">
+        <label class="wide">With<select class="sel" id="lc-contact" style="width:100%">${D.contacts.map(c =>
+          `<option value="${c.id}">${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+        <label>Direction<select class="sel" id="lc-dir" style="width:100%"><option value="out">Outgoing</option><option value="in">Incoming</option></select></label>
+        <label>Outcome<select class="sel" id="lc-out" style="width:100%"><option>Connected</option><option>Voicemail</option><option>No answer</option></select></label>
+        <label>Minutes<input class="inp" id="lc-mins" type="number" min="0" value="5"></label>
+        <label>Who called<select class="sel" id="lc-owner" style="width:100%">${D.owners.map(o =>
+          `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></label>
+        <label class="wide">What was said?<textarea class="txa" id="lc-note" placeholder="The gist, in a sentence or two."></textarea></label>
+      </div>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="log-call-save">Log call</button>`);
+  };
+  HSV.actions['log-call-save'] = function () {
+    const D = HSV.D();
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const note = v('lc-note').trim();
+    if (!note) { document.getElementById('lc-note').focus(); return; }
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const cid = v('lc-contact');
+    D.calls.unshift({ id: 'l' + Date.now(), contactId: cid, owner: v('lc-owner'),
+      at: HSV.TODAY + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()),
+      dir: v('lc-dir'), mins: Math.max(0, +v('lc-mins') || 0),
+      outcome: v('lc-out'), rec: false, note, custom: true });
+    const notes = HSV.ov().notes;
+    (notes[cid] = notes[cid] || []).unshift({ d: HSV.TODAY, t: 'call', text: note });
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Call logged — it\'s here, on the contact and on the activity feed');
+  };
 })();

@@ -354,5 +354,21 @@ window.HSV_DATA.realestate = {
     { id: 'e5', kind: 'Anniversary',   name: 'Home anniversary note',        uses: 96, edited: '2026-05-01',
       subject: 'One year at home, {{first name}} 🏡',
       body: 'Hi {{first name}},\n\nHappy home-iversary! A year already.\n\nAttached is a quick, no-strings update on what your home is worth today — neighbours’ sales included. And if anyone you know is thinking of moving, you know where we are.\n\nWarmly,\n{{owner}}' }
+  ],
+
+  /* the call log — synced from the phone system */
+  calls: [
+    { id: 'l1', contactId: 'c1',  owner: 'o3', at: '2026-07-03 13:45', dir: 'out', mins: 5,  outcome: 'Connected', rec: true,
+      note: 'Good news call: appraisal came in at value. Financing clear — closing on track for the 24th.' },
+    { id: 'l2', contactId: 'c6',  owner: 'o3', at: '2026-07-04 16:30', dir: 'out', mins: 7,  outcome: 'Connected', rec: true,
+      note: 'Tour weekend logistics: 5 homes Saturday, 3 Sunday. Adding the new Mayfaire townhouse to the route.' },
+    { id: 'l3', contactId: 'c9',  owner: 'o3', at: '2026-07-03 12:15', dir: 'in',  mins: 4,  outcome: 'Connected', rec: false,
+      note: 'Rough payment math on a $270k condo (~$1,850/mo with 10% down). Wants the lender intro — weekends best.' },
+    { id: 'l4', contactId: 'c2',  owner: 'o2', at: '2026-07-02 10:20', dir: 'out', mins: 0,  outcome: 'Voicemail', rec: false,
+      note: 'Voicemail ahead of Thursday: bringing the data on what happens to overpriced beach listings.' },
+    { id: 'l5', contactId: 'c11', owner: 'o1', at: '2026-07-02 09:05', dir: 'in',  mins: 6,  outcome: 'Connected', rec: true,
+      note: 'Scott at Coastal: Pruitt file clear to close, and rates dipped — good week for buyer outreach.' },
+    { id: 'l6', contactId: 'c12', owner: 'o3', at: '2026-06-29 18:05', dir: 'out', mins: 3,  outcome: 'Connected', rec: false,
+      note: 'The Wisteria Ln news (5 offers). She took it well — ready to move fast on the next match.' }
   ]
 };

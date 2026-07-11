@@ -855,6 +855,41 @@ th.sortable.s-on .sc { opacity: 1; color: var(--link); }
 .sn-x:hover { opacity: 1; background: rgba(0,0,0,.06); }
 .sn-x svg { width: 11px; height: 11px; }
 
+/* ---- calls + sample player ----------------------------------------------------------------- */
+.call-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 18px;
+}
+.call-row + .call-row { border-top: 1px solid var(--border-soft); }
+.cl-dir {
+  width: 26px; height: 26px; flex: none; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 14px; font-weight: 700;
+}
+.cl-dir.out { background: var(--blue-bg); color: var(--blue-ink); }
+.cl-dir.in  { background: var(--green-bg); color: var(--green-ink); }
+.cl-note { font-size: 13px; color: var(--ink-2); margin-top: 4px; max-width: 74ch; }
+.cl-owner { flex: none; margin-top: 2px; }
+.cplayer {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 9px; padding: 8px 12px;
+  background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 999px;
+  max-width: 460px; flex-wrap: wrap;
+}
+.cp-btn {
+  width: 30px; height: 30px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--nav); color: #fff;
+  border: 0; border-radius: 50%; cursor: pointer; font-size: 11px;
+  transition: background var(--t-fast);
+}
+.cp-btn:hover { background: var(--nav-2); }
+.cp-wave { position: relative; flex: 1; min-width: 120px; height: 22px; cursor: pointer; color: var(--faint); }
+.cp-wave svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: currentColor; pointer-events: none; }
+.cp-fill { position: absolute; inset: 0; color: var(--orange); pointer-events: none; clip-path: inset(0 100% 0 0); }
+.cp-time { font-size: 11px; color: var(--ink-2); flex: none; }
+.cp-note { font-size: 10.5px; color: var(--muted); flex: none; }
+
 /* ---- quotes: the paper document ---------------------------------------------------------- */
 .quote-paper {
   background: var(--surface);

@@ -354,5 +354,21 @@ window.HSV_DATA.medical = {
     { id: 'e5', kind: 'Referrer',      name: 'Referral received — doctor update', uses: 64, edited: '2026-06-05',
       subject: 'We’ve received your referral for {{first name}}',
       body: 'Dear colleague,\n\nThank you for referring {{first name}} to us. They’ve been contacted and offered an appointment within the week.\n\nYou’ll receive our summary letter within three working days of the first visit — by secure portal as usual.\n\nWith thanks,\nBrightCare Health · Referrals desk' }
+  ],
+
+  /* the call log — synced from the phone system */
+  calls: [
+    { id: 'l1', contactId: 'c5',  owner: 'o2', at: '2026-06-27 15:05', dir: 'out', mins: 11, outcome: 'Connected', rec: true,
+      note: 'Walked through the 240-employee health-check proposal. Board reviews in July — send the updated numbers by the 14th.' },
+    { id: 'l2', contactId: 'c2',  owner: 'o3', at: '2026-07-03 16:20', dir: 'out', mins: 4,  outcome: 'Connected', rec: true,
+      note: 'Confirmed Tuesday consult; sent intake forms after the call. Prefers morning slots going forward.' },
+    { id: 'l3', contactId: 'c3',  owner: 'o4', at: '2026-06-30 09:05', dir: 'in',  mins: 6,  outcome: 'Connected', rec: true,
+      note: 'Dr. Okafor chasing the two discharge letters. Promised both today plus a workflow fix so it stops recurring.' },
+    { id: 'l4', contactId: 'c14', owner: 'o2', at: '2026-06-29 11:32', dir: 'out', mins: 0,  outcome: 'Voicemail', rec: false,
+      note: 'Left consult options on voicemail — she asked to be called back after the 6th.' },
+    { id: 'l5', contactId: 'c1',  owner: 'o2', at: '2026-07-01 10:15', dir: 'out', mins: 3,  outcome: 'Connected', rec: false,
+      note: 'Confirmed physio follow-up for July 14, 9:30am. Knee feeling steadier on stairs.' },
+    { id: 'l6', contactId: 'c11', owner: 'o3', at: '2026-07-04 14:48', dir: 'in',  mins: 2,  outcome: 'Connected', rec: false,
+      note: 'Asked about typhoid timing for the August trip — needs the jab by July 29. Will book online.' }
   ]
 };

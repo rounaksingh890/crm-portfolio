@@ -353,5 +353,21 @@ window.HSV_DATA.ecommerce = {
     { id: 'e5', kind: 'Wholesale',     name: 'Stockist order confirmation',   uses: 74,  edited: '2026-06-28',
       subject: 'Order confirmed for {{company}} — timeline inside',
       body: 'Hi {{first name}},\n\nYour order is confirmed and in the queue. Production and freight timeline attached — we flag any slip the day we see it, not the week after.\n\nQuestions on the line sheet or terms? Reply here; {{owner}} reads these directly.\n\nPeakGear Wholesale' }
+  ],
+
+  /* the call log — synced from the phone system */
+  calls: [
+    { id: 'l1', contactId: 'c8',  owner: 'o2', at: '2026-07-02 09:30', dir: 'out', mins: 8,  outcome: 'Connected', rec: true,
+      note: 'Delivery commitment for camp: 180 units July 8, 60 more July 16 — in writing today. He releases the PO on receipt.' },
+    { id: 'l2', contactId: 'c3',  owner: 'o2', at: '2026-06-30 14:10', dir: 'out', mins: 9,  outcome: 'Connected', rec: true,
+      note: 'Fall fleet shaping up: ~120 reinforced packs + repair kits. Samples ship next week for the review.' },
+    { id: 'l3', contactId: 'c1',  owner: 'o2', at: '2026-07-03 11:55', dir: 'in',  mins: 5,  outcome: 'Connected', rec: false,
+      note: 'Committee signed off; PO system needs the W-9 and updated line sheet. Sent both within the hour.' },
+    { id: 'l4', contactId: 'c6',  owner: 'o1', at: '2026-07-03 08:05', dir: 'out', mins: 0,  outcome: 'Voicemail', rec: false,
+      note: 'Voicemail on the MOQ counter (600 vs 1,000) — proposed keeping unit price if the first re-order lands by January.' },
+    { id: 'l5', contactId: 'c11', owner: 'o4', at: '2026-07-01 19:20', dir: 'out', mins: 6,  outcome: 'Connected', rec: true,
+      note: 'Ridgeline shoot logistics: permit through, golden hour on the 12th, both colorways overnighted by the 9th.' },
+    { id: 'l6', contactId: 'c9',  owner: 'o3', at: '2026-07-04 10:40', dir: 'in',  mins: 2,  outcome: 'Connected', rec: false,
+      note: 'Dented bottle from the marketplace order — replacement shipped same day, told him to keep the dented one.' }
   ]
 };

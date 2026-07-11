@@ -355,5 +355,21 @@ window.HSV_DATA.saas = {
     { id: 'e5', kind: 'Renewal',       name: 'Renewal — 60 days out',           uses: 41,  edited: '2026-06-30',
       subject: 'Renewal ahead for {{company}} — zero surprises',
       body: 'Hi {{first name}},\n\nYour renewal is about 60 days out, so here’s everything upfront: current usage, seat count, and next year’s pricing — no games.\n\nWant to adjust seats or add SSO before renewal? Now’s the cheapest moment.\n\n{{owner}}\nCloudMetric' }
+  ],
+
+  /* the call log — synced from the phone system */
+  calls: [
+    { id: 'l1', contactId: 'c1',  owner: 'o2', at: '2026-06-25 14:00', dir: 'out', mins: 28, outcome: 'Connected', rec: true,
+      note: 'Technical deep-dive with the Fintrella data team — event schema, volumes, migration windows. Strong signals.' },
+    { id: 'l2', contactId: 'c2',  owner: 'o3', at: '2026-06-12 11:10', dir: 'out', mins: 14, outcome: 'Connected', rec: true,
+      note: 'Contract walkthrough: 60 seats, two-year ramp, Frankfurt hosting. Redlines expected from their legal.' },
+    { id: 'l3', contactId: 'c4',  owner: 'o3', at: '2026-07-01 09:40', dir: 'out', mins: 9,  outcome: 'Connected', rec: true,
+      note: 'BAA with their counsel now; he wants signature before the trial ends on the 9th. No blockers on our side.' },
+    { id: 'l4', contactId: 'c6',  owner: 'o3', at: '2026-07-02 15:25', dir: 'out', mins: 0,  outcome: 'Voicemail', rec: false,
+      note: 'Voicemail re: the 3-year price lock — told him an answer lands this week either way.' },
+    { id: 'l5', contactId: 'c8',  owner: 'o4', at: '2026-07-02 10:05', dir: 'out', mins: 12, outcome: 'Connected', rec: true,
+      note: 'Renewal call: happy with support, SSO is the condition. Scoping session booked for the 16th with their IT.' },
+    { id: 'l6', contactId: 'c10', owner: 'o3', at: '2026-07-03 17:12', dir: 'in',  mins: 3,  outcome: 'Connected', rec: false,
+      note: 'Asked whether Starter includes funnels — it does. Solo dev, budget-conscious, likely converts on her own.' }
   ]
 };

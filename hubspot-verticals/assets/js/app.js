@@ -43,7 +43,7 @@
     deals: 'crm', deal: 'crm', tasks: 'crm', meetings: 'crm', lists: 'crm', activity: 'crm',
     inbox: 'conv', tickets: 'conv', ticket: 'conv',
     campaigns: 'mkt', campaign: 'mkt', forms: 'mkt', form: 'mkt',
-    workflows: 'mkt', workflow: 'mkt',
+    workflows: 'mkt', workflow: 'mkt', builder: 'mkt',
     reports: 'reports', report: 'reports',
     properties: 'settings', integrations: 'settings', users: 'settings', pipeline: 'settings', about: 'settings',
   };

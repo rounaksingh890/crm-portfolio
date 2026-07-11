@@ -189,6 +189,7 @@
       return `<div class="card wf-card" data-href="${HSV.href('workflow', w.id)}" tabindex="0">
         <div class="wf-top">
           <h3>${esc(w.name)}</h3>
+          ${w.custom ? UI.pill('built this session', 't-orange') : ''}
           ${UI.pill(on ? 'On' : 'Off', on ? 't-green' : 't-gray')}
           <button class="switch ${on ? 'on' : ''}" data-action="wf-toggle" data-id="${w.id}"
             role="switch" aria-checked="${on}" aria-label="Turn “${esc(w.name)}” ${on ? 'off' : 'on'}"></button>
@@ -204,7 +205,9 @@
     }).join('');
 
     return `<div class="page view-in">
-      ${UI.pageHead('Automations', 'The robots that do the follow-up. Each one is written in plain language — open one to see every step. The switches work.')}
+      ${UI.pageHead('Automations<span class="ph-count">' + D.workflows.length + ' workflows</span>',
+        'The robots that do the follow-up. Each one is written in plain language — open one to see every step, or build your own from blocks.',
+        `<a class="btn btn-primary" href="${HSV.href('builder')}">Create workflow</a>`)}
       <div class="wf-list">${cards}</div>
     </div>`;
   };
@@ -242,8 +245,9 @@
 
     const centre = `
       <section class="card tl-card">
-        <h3>Every step, in order</h3>
-        <p class="small muted" style="margin:4px 0 16px">This is the whole automation — no hidden logic, nothing you couldn’t explain to a colleague in a minute.</p>
+        <h3>Every step, in order
+          <a class="assoc-add" style="margin-left:auto" href="${HSV.href('builder', w.id)}">✎ Edit the steps</a></h3>
+        <p class="small muted" style="margin:4px 0 16px">This is the whole automation — no hidden logic, nothing you couldn’t explain to a colleague in a minute. And yes, you can edit it.</p>
         <div class="wf-flow">${steps}</div>
       </section>`;
 
@@ -262,4 +266,235 @@
     HSV.render();
     UI.toast(HSV.wfOn(w) ? 'Automation switched on' : 'Automation paused');
   };
+
+  /* ==========================================================================
+     WORKFLOW BUILDER — drag blocks together (or tap to add), edit every line,
+     preview the schedule against a sample contact, then save it for real.
+     ========================================================================== */
+  const BLOCKS = [
+    { k: 'trigger', label: 'When this happens', hint: 'How people enter — every workflow starts with one.', def: 'Someone fills the website form' },
+    { k: 'email',   label: 'Send an email',     hint: 'A message in your voice, sent for you.',             def: 'Send a friendly follow-up email' },
+    { k: 'delay',   label: 'Wait',              hint: 'Give people room to breathe.',                       def: 'Wait 1 day' },
+    { k: 'branch',  label: 'Decision',          hint: 'Do different things depending on what happened.',    def: 'Replied already? If yes, end the workflow' },
+    { k: 'task',    label: 'Create a task',     hint: 'Put a human in the loop.',                           def: 'Create a call task for the owner' },
+    { k: 'update',  label: 'Update / notify',   hint: 'Change a field or ping the team.',                   def: 'Notify the team channel' }
+  ];
+  let draft = null, draftFor = undefined, dragSrc = null;
+
+  function initDraft() {
+    const id = HSV.state.id || null;
+    const key = HSV.state.portal + '|' + (id || 'new');
+    if (draftFor === key && draft) return;
+    draftFor = key;
+    if (id) {
+      const w = HSV.workflow(id);
+      draft = w ? { id, name: w.name, goal: w.goal, on: HSV.wfOn(w), steps: w.steps.map(s => ({ k: s.k, text: s.text })) } : null;
+    }
+    if (!id || !draft) {
+      draft = { id: null, name: '', goal: '',  on: true,
+        steps: [{ k: 'trigger', text: BLOCKS[0].def }, { k: 'email', text: BLOCKS[1].def }] };
+    }
+  }
+
+  HSV.views.builder = function () {
+    initDraft();
+    if (!draft) return HSV.notFound('workflows', 'Automations', 'That automation doesn’t exist');
+    const editing = !!draft.id;
+
+    const palette = BLOCKS.map(b => `
+      <button class="pal-block ws-${b.k}-b" draggable="true" data-pal="${b.k}" data-action="bld-add" data-k="${b.k}"
+        title="Click to add, or drag it into place">
+        <span class="ws-ic ws-${b.k}">${UI.icon((KIND[b.k] || KIND.update).ic)}</span>
+        <span class="grow"><b>${esc(b.label)}</b><small>${esc(b.hint)}</small></span>
+        <span class="pal-plus">+</span>
+      </button>`).join('');
+
+    const steps = draft.steps.map((s, i) => {
+      const k = KIND[s.k] || KIND.update;
+      return (i ? '<div class="wf-join"></div>' : '') + `
+        <div class="wf-step bld-step" draggable="true" data-bi="${i}">
+          <span class="bld-grip" title="Drag to reorder">${UI.icon('drag')}</span>
+          <span class="ws-ic ws-${esc(s.k)}">${UI.icon(k.ic)}</span>
+          <span class="grow"><span class="ws-kind">${esc(k.label)}</span>
+            <input class="bld-text" data-bld-text="${i}" value="${esc(s.text)}" aria-label="${esc(k.label)} — step text"></span>
+          <span class="bld-ctl">
+            <button class="bld-btn" data-action="bld-up" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
+            <button class="bld-btn" data-action="bld-down" data-i="${i}" ${i === draft.steps.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
+            <button class="bld-btn del" data-action="bld-del" data-i="${i}" aria-label="Remove step">✕</button>
+          </span>
+        </div>`;
+    }).join('');
+
+    return `<div class="page view-in">
+      ${UI.crumbs(HSV.href('workflows'), 'Automations', editing ? 'Edit: ' + draft.name : 'New workflow')}
+      ${UI.pageHead(editing ? 'Edit the steps' : 'Build a workflow',
+        'Drag blocks from the left into the flow — or just click them. Every line is editable. Nothing is saved until you say so.',
+        `<button class="btn" data-action="bld-preview">▷ Preview a run</button>
+         <button class="btn btn-primary" data-action="bld-save">${editing ? 'Save changes' : 'Save workflow'}</button>`)}
+      <div class="bld">
+        <aside class="bld-pal card">
+          <h3>Building blocks</h3>
+          ${palette}
+        </aside>
+        <section class="bld-canvas card">
+          <div class="bld-meta">
+            <label>Name it<input class="inp" data-bld-name value="${esc(draft.name)}" placeholder="e.g. New enquiry → first reply in minutes"></label>
+            <label>What's it for?<input class="inp" data-bld-goal value="${esc(draft.goal)}" placeholder="e.g. Nobody waits more than an hour"></label>
+            <label class="bld-on"><span>Start it switched on</span>
+              <button class="switch ${draft.on ? 'on' : ''}" data-action="bld-on" role="switch" aria-checked="${draft.on}" aria-label="Start switched on"></button></label>
+          </div>
+          <div class="wf-flow bld-flow" id="bld-flow">${steps}
+            <div class="bld-dropend" data-dropend>Drop a block here — or click one on the left</div>
+          </div>
+        </section>
+      </div>
+    </div>`;
+  };
+
+  /* ---- builder actions ------------------------------------------------------ */
+  function syncTexts() {
+    document.querySelectorAll('[data-bld-text]').forEach(inp => {
+      const i = +inp.dataset.bldText;
+      if (draft.steps[i]) draft.steps[i].text = inp.value;
+    });
+    const n = document.querySelector('[data-bld-name]');
+    const g = document.querySelector('[data-bld-goal]');
+    if (n) draft.name = n.value;
+    if (g) draft.goal = g.value;
+  }
+  HSV.actions['bld-add'] = function (el) {
+    syncTexts();
+    const b = BLOCKS.find(x => x.k === el.dataset.k);
+    if (b.k === 'trigger' && draft.steps.some(s => s.k === 'trigger')) {
+      UI.toast('One trigger per workflow — edit the one at the top'); return;
+    }
+    if (b.k === 'trigger') draft.steps.unshift({ k: b.k, text: b.def });
+    else draft.steps.push({ k: b.k, text: b.def });
+    HSV.render();
+  };
+  HSV.actions['bld-del'] = function (el) {
+    syncTexts();
+    draft.steps.splice(+el.dataset.i, 1);
+    HSV.render();
+  };
+  HSV.actions['bld-up'] = function (el) {
+    syncTexts();
+    const i = +el.dataset.i;
+    if (i > 0) { const [s] = draft.steps.splice(i, 1); draft.steps.splice(i - 1, 0, s); HSV.render(); }
+  };
+  HSV.actions['bld-down'] = function (el) {
+    syncTexts();
+    const i = +el.dataset.i;
+    if (i < draft.steps.length - 1) { const [s] = draft.steps.splice(i, 1); draft.steps.splice(i + 1, 0, s); HSV.render(); }
+  };
+  HSV.actions['bld-on'] = function () { syncTexts(); draft.on = !draft.on; HSV.render(); };
+  HSV.actions['bld-save'] = function () {
+    syncTexts();
+    const D = HSV.D();
+    if (!draft.steps.some(s => s.k === 'trigger')) { UI.toast('Add a trigger — every workflow needs a way in'); return; }
+    if (draft.steps.length < 2) { UI.toast('Add at least one step after the trigger'); return; }
+    if (!draft.name.trim()) {
+      const n = document.querySelector('[data-bld-name]');
+      n.focus(); UI.toast('Give it a name first'); return;
+    }
+    const trigger = draft.steps.find(s => s.k === 'trigger').text;
+    if (draft.id) {
+      const w = HSV.workflow(draft.id);
+      w.name = draft.name.trim(); w.goal = draft.goal.trim() || w.goal;
+      w.trigger = trigger; w.steps = draft.steps.map(s => ({ k: s.k, text: s.text }));
+      HSV.ov().wfOn[w.id] = draft.on;
+      const id = draft.id;
+      draft = null; draftFor = undefined;
+      HSV.go(HSV.href('workflow', id));
+      UI.toast('Saved — the automation now runs your version');
+    } else {
+      const w = { id: 'w' + Date.now(), name: draft.name.trim(),
+        status: draft.on ? 'On' : 'Off', trigger,
+        goal: draft.goal.trim() || 'Built during this session',
+        enrolled: 0, active: 0, completed: 0, custom: true,
+        steps: draft.steps.map(s => ({ k: s.k, text: s.text })) };
+      D.workflows.unshift(w);
+      draft = null; draftFor = undefined;
+      HSV.go(HSV.href('workflow', w.id));
+      UI.toast('Workflow created — it\'s live on the Automations list');
+    }
+  };
+  HSV.actions['bld-preview'] = function () {
+    syncTexts();
+    const D = HSV.D();
+    const c = D.contacts[0];
+    let day = 0, later = false;
+    const rows = draft.steps.map(s => {
+      if (s.k === 'delay') {
+        const m = s.text.match(/(\d+)\s*(hour|day|week)/i);
+        if (m) {
+          const n = +m[1], u = m[2].toLowerCase();
+          if (u === 'hour') later = true;
+          else { day += n * (u === 'week' ? 7 : 1); later = false; }
+        } else { day += 1; later = false; }
+        return null;
+      }
+      const kind = (KIND[s.k] || KIND.update).label;
+      return `<div class="prev-row"><span class="prev-day">Day ${day}${later ? '+' : ''}</span>
+        <span class="ws-ic ws-${esc(s.k)}" style="width:26px;height:26px">${UI.icon((KIND[s.k] || KIND.update).ic)}</span>
+        <span class="grow"><b>${esc(kind)}</b><small style="display:block">${esc(s.text)}</small></span></div>`;
+    }).filter(Boolean).join('');
+    UI.modal('Preview: a run for ' + HSV.cName(c), `
+      <p class="small muted">If ${esc(c.first)} entered this workflow today, here's the schedule the steps produce:</p>
+      <div class="prev-list">${rows || '<p class="small muted">Add some steps first.</p>'}</div>
+      <p class="small muted">Waits move the clock; everything else happens on the day it lands on. In the live build this preview runs against real enrollment rules.</p>`,
+      `<button class="btn" data-action="close-modal">Close</button>`);
+  };
+
+  /* ---- builder drag & drop (palette → canvas, and reorder) --------------------- */
+  document.addEventListener('dragstart', function (e) {
+    const pal = e.target.closest && e.target.closest('[data-pal]');
+    const step = e.target.closest && e.target.closest('.bld-step[data-bi]');
+    if (pal) { dragSrc = { type: 'pal', k: pal.dataset.pal }; e.dataTransfer.effectAllowed = 'copy'; }
+    else if (step) { dragSrc = { type: 'step', i: +step.dataset.bi }; step.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+    else return;
+    e.dataTransfer.setData('text/plain', 'bld');
+  });
+  document.addEventListener('dragend', function () {
+    if (!dragSrc) return;
+    dragSrc = null;
+    document.querySelectorAll('.bld-step.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.bld-over').forEach(el => el.classList.remove('bld-over'));
+  });
+  document.addEventListener('dragover', function (e) {
+    if (!dragSrc) return;
+    const target = e.target.closest && (e.target.closest('.bld-step[data-bi]') || e.target.closest('[data-dropend]'));
+    if (!target) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragSrc.type === 'pal' ? 'copy' : 'move';
+    document.querySelectorAll('.bld-over').forEach(el => { if (el !== target) el.classList.remove('bld-over'); });
+    target.classList.add('bld-over');
+  });
+  document.addEventListener('drop', function (e) {
+    if (!dragSrc) return;
+    const stepEl = e.target.closest && e.target.closest('.bld-step[data-bi]');
+    const endEl = e.target.closest && e.target.closest('[data-dropend]');
+    if (!stepEl && !endEl) return;
+    e.preventDefault();
+    syncTexts();
+    let at = stepEl ? +stepEl.dataset.bi : draft.steps.length;
+    if (dragSrc.type === 'pal') {
+      const b = BLOCKS.find(x => x.k === dragSrc.k);
+      if (b.k === 'trigger' && draft.steps.some(s => s.k === 'trigger')) { UI.toast('One trigger per workflow'); }
+      else { draft.steps.splice(b.k === 'trigger' ? 0 : at, 0, { k: b.k, text: b.def }); }
+    } else {
+      const from = dragSrc.i;
+      if (at > from) at--;
+      const [s] = draft.steps.splice(from, 1);
+      draft.steps.splice(Math.min(at, draft.steps.length), 0, s);
+    }
+    dragSrc = null;
+    HSV.render();
+  });
+
+  /* keep the draft in sync as people type (no re-render needed) */
+  document.addEventListener('input', function (e) {
+    if (!draft) return;
+    if (e.target.matches && e.target.matches('[data-bld-text], [data-bld-name], [data-bld-goal]')) syncTexts();
+  });
 })();

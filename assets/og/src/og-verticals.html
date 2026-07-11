@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+  * { margin: 0; box-sizing: border-box; }
+  body { width: 1200px; height: 630px; font-family: 'Segoe UI', Arial, sans-serif; background: #213343; color: #fff; overflow: hidden; }
+  .card { position: relative; width: 1200px; height: 630px; padding: 72px 84px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 18px; }
+  .mark { width: 64px; height: 64px; border-radius: 50%; background: #ff5c35; position: relative; }
+  .mark::after { content: ""; position: absolute; inset: 19px; border-radius: 50%; background: #213343; }
+  .mark::before { content: ""; position: absolute; left: 28px; top: -6px; width: 8px; height: 20px; border-radius: 4px; background: #ff5c35; box-shadow: 26px 46px 0 #ff5c35, -26px 46px 0 #ff5c35; }
+  .brand { font-size: 30px; font-weight: 700; }
+  h1 { margin-top: 66px; font-size: 72px; line-height: 1.08; font-weight: 700; letter-spacing: -1.5px; max-width: 980px; }
+  h1 em { font-style: normal; color: #ff5c35; }
+  .sub { margin-top: 24px; font-size: 29px; color: #cfd9e4; max-width: 940px; line-height: 1.35; }
+  .chips { margin-top: auto; display: flex; gap: 16px; }
+  .chip { background: #2d3e50; border: 2px solid #425b76; border-radius: 999px; padding: 14px 30px; font-size: 26px; font-weight: 600; color: #eaf0f6; }
+  .tag { position: absolute; top: 72px; right: 84px; background: rgba(255,255,255,.08); border: 2px solid #425b76; color: #cfd9e4; font-size: 22px; font-weight: 600; padding: 10px 24px; border-radius: 999px; }
+  .url { position: absolute; bottom: 30px; right: 84px; font-size: 22px; color: #7c98b6; }
+</style></head><body>
+<div class="card">
+  <div class="top"><div class="mark"></div><div class="brand">Multi-industry CRM showcase</div></div>
+  <div class="tag">Sample · fictional data</div>
+  <h1>One HubSpot-style build,<br>configured <em>four ways</em>.</h1>
+  <p class="sub">15 working sections per portal — deal boards you can drag, a workflow builder, printable quotes, call recordings, live forecasts. Every number reconciles.</p>
+  <div class="chips"><span class="chip">🏥 Medical</span><span class="chip">📊 SaaS</span><span class="chip">🏠 Real estate</span><span class="chip">🏕 E-commerce</span></div>
+  <div class="url">rounaksingh890.github.io/crm-portfolio</div>
+</div>
+</body></html>

@@ -123,6 +123,26 @@ h1, h2, h3 { font-family: var(--font-head); font-weight: 600; letter-spacing: -0
 .ob-rows i { width: 96px; height: 12px; border-radius: 999px; background: #fff; border: 1px solid #d7dcf2; }
 .ob-rows i.on { background: #4553c2; border-color: #4553c2; }
 
+/* ---- highlights band -------------------------------------------------------- */
+.hl-band { max-width: 1080px; margin: 0 auto; padding: 26px 20px 6px; }
+.hl-band h2 { font-size: clamp(20px, 3vw, 25px); margin-bottom: 18px; }
+.hl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.hl-item {
+  display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto;
+  column-gap: 14px; row-gap: 2px; align-items: center;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 15px 17px;
+}
+.hl-ic {
+  grid-row: 1 / 3;
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c) 13%, #fff);
+  color: var(--c); font-size: 19px; font-weight: 700;
+}
+.hl-item b { font-size: 14.5px; }
+.hl-item > span:last-child { font-size: 13px; color: var(--ink-2); }
+
 /* ---- about ---------------------------------------------------------------- */
 .about { max-width: 1080px; margin: 0 auto; padding: 36px 20px; }
 .about-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: clamp(24px, 4vw, 40px); }

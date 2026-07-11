@@ -9,7 +9,7 @@ number is calculated live from the sample data, and **all names and figures are 
 | # | Piece | What it shows | Folder |
 |---|-------|---------------|--------|
 | 1 | **Spreadsheet Rescue** | A messy customer spreadsheet becoming clean CRM records, every row traceable both ways | [`crm-migration/`](crm-migration/) |
-| 2 | **Multi-industry CRM showcase** | One HubSpot-style build configured for four industries (medical, SaaS, real estate, e-commerce), ~20 screens each | [`hubspot-verticals/`](hubspot-verticals/) |
+| 2 | **Multi-industry CRM showcase** | One HubSpot-style build configured for four industries (medical, SaaS, real estate, e-commerce) — 15 working sections each, from drag-and-drop deals to a workflow builder, quotes, calls and forecasting | [`hubspot-verticals/`](hubspot-verticals/) |
 | 3 | **Client onboarding portal** | The single link a client gets after signing: live progress, plan, tasks, forms, approvals | [`client-onboarding/`](client-onboarding/) |
 
 Each folder is self-contained and has its own README.

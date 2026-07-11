@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+  /* image source for a social card — single system font is intentional (headless render) */
+  * { margin: 0; box-sizing: border-box; }
+  body { width: 1200px; height: 630px; font-family: 'Segoe UI', Arial, sans-serif; background: #f7f9f6; color: #23372e; overflow: hidden; }
+  .card { position: relative; width: 1200px; height: 630px; padding: 72px 84px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 18px; }
+  .mark { width: 64px; height: 64px; border-radius: 16px; background: #2e7d5b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 700; }
+  .brand { font-size: 30px; font-weight: 700; }
+  h1 { margin-top: 64px; font-size: 72px; line-height: 1.08; font-weight: 700; letter-spacing: -1.5px; }
+  h1 em { font-style: normal; color: #2e7d5b; }
+  .sub { margin-top: 24px; font-size: 29px; color: #46604f; max-width: 920px; line-height: 1.35; }
+  .motif { margin-top: auto; display: flex; align-items: center; gap: 26px; }
+  .sheet { display: grid; grid-template-columns: repeat(4, 52px); gap: 6px; }
+  .sheet i { height: 30px; background: #fff; border: 2px solid #cfe0d6; border-radius: 5px; display: block; }
+  .sheet i.bad { background: #fdeef1; border-color: #eeb6c2; }
+  .arrow { font-size: 44px; color: #2e7d5b; font-weight: 700; }
+  .cards { display: grid; gap: 10px; }
+  .cards b { display: block; width: 150px; height: 34px; border-radius: 9px; background: #2e7d5b; }
+  .cards b:nth-child(2) { opacity: .75; } .cards b:nth-child(3) { opacity: .5; }
+  .stat { margin-left: 40px; font-size: 26px; color: #46604f; font-weight: 600; }
+  .stat b { color: #1d5e42; font-size: 34px; }
+  .tag { position: absolute; top: 72px; right: 84px; background: #fff6e4; border: 2px solid #f0dcae; color: #8a6116; font-size: 22px; font-weight: 600; padding: 10px 24px; border-radius: 999px; }
+  .url { position: absolute; bottom: 30px; right: 84px; font-size: 22px; color: #7d938a; }
+</style></head><body>
+<div class="card">
+  <div class="top"><div class="mark">⤴</div><div class="brand">Spreadsheet Rescue</div></div>
+  <div class="tag">Sample · fictional data</div>
+  <h1>A CRM migration,<br><em>shown honestly.</em></h1>
+  <p class="sub">The messy sheet, the cleanup, and the system it became — every row traceable in both directions, every stat computed live.</p>
+  <div class="motif">
+    <div class="sheet"><i></i><i class="bad"></i><i></i><i></i><i></i><i></i><i class="bad"></i><i></i></div>
+    <span class="arrow">→</span>
+    <div class="cards"><b></b><b></b><b></b></div>
+    <div class="stat"><b>30</b> messy rows → <b>22</b> clean · <b>0</b> lost</div>
+  </div>
+  <div class="url">rounaksingh890.github.io/crm-portfolio</div>
+</div>
+</body></html>

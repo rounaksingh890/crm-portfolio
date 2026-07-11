@@ -855,6 +855,83 @@ th.sortable.s-on .sc { opacity: 1; color: var(--link); }
 .sn-x:hover { opacity: 1; background: rgba(0,0,0,.06); }
 .sn-x svg { width: 11px; height: 11px; }
 
+/* ---- quotes: the paper document ---------------------------------------------------------- */
+.quote-paper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: clamp(22px, 4vw, 44px);
+  max-width: 720px;
+  box-shadow: var(--sh-2);
+}
+.qp-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.qp-brand { display: flex; gap: 11px; align-items: center; }
+.qp-mark {
+  width: 42px; height: 42px; border-radius: 10px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font: 700 20px/1 var(--font);
+}
+.qp-brand b { display: block; font-size: 16px; }
+.qp-brand span { font-size: 12px; color: var(--muted); }
+.qp-meta { text-align: right; display: grid; gap: 1px; }
+.qp-meta b { font-size: 18px; letter-spacing: .12em; color: var(--ink-2); }
+.qp-meta span { font-size: 12px; color: var(--muted); }
+.qp-parties { display: flex; gap: 40px; margin: 26px 0 20px; flex-wrap: wrap; }
+.qp-parties small { display: block; font: 600 10.5px/2 var(--font); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.qp-parties b { display: block; font-size: 14px; }
+.qp-parties span { display: block; font-size: 12.5px; color: var(--ink-2); }
+.qp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.qp-table th {
+  text-align: left; padding: 8px 10px;
+  font: 600 10.5px/1.4 var(--font); letter-spacing: .05em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 2px solid var(--ink);
+}
+.qp-table td { padding: 10px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.qp-table th.td-num, .qp-table td.td-num { text-align: right; }
+.qp-totals { display: grid; gap: 5px; justify-content: end; margin-top: 14px; }
+.qp-totals > div { display: flex; gap: 30px; justify-content: space-between; font-size: 13px; color: var(--ink-2); min-width: 220px; }
+.qp-totals .qp-grand { border-top: 2px solid var(--ink); padding-top: 7px; margin-top: 3px; font-size: 15px; color: var(--ink); }
+.qp-totals .qp-grand b { font-size: 17px; }
+.qp-note { margin-top: 20px; font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: var(--r-sm); padding: 10px 13px; }
+.qp-foot { display: flex; justify-content: space-between; gap: 14px; margin-top: 28px; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; }
+.qp-sign { color: var(--ink-2); }
+
+/* print: only the quote paper, like a real document */
+@media print {
+  body * { visibility: hidden; }
+  .quote-paper, .quote-paper * { visibility: visible; }
+  .quote-paper { position: absolute; left: 0; top: 0; width: 100%; max-width: none; border: 0; box-shadow: none; border-radius: 0; }
+}
+
+/* ---- quote builder ------------------------------------------------------------------------ */
+.qb-rows { display: grid; gap: 8px; }
+.qb-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px 110px 30px; gap: 10px; align-items: center; }
+.qb-row .sel { width: 100%; }
+.qb-qty { text-align: right; }
+.qb-line { text-align: right; font-size: 13.5px; }
+.qb-totals { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+.qb-disc { display: flex; align-items: center; gap: 8px; font: 500 12.5px/1 var(--font); color: var(--ink-2); }
+.qb-disc .inp { width: 110px; text-align: right; }
+.qb-sums { display: grid; gap: 5px; min-width: 220px; }
+.qb-sums > div { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); }
+.qb-sums .grand { font-size: 15px; color: var(--ink); border-top: 2px solid var(--ink); padding-top: 6px; }
+
+/* ---- email templates ------------------------------------------------------------------------ */
+.tpl-card { padding: 16px 18px; display: grid; gap: 8px; cursor: pointer; transition: box-shadow var(--t-fast), border-color var(--t-fast); }
+.tpl-card:hover { border-color: var(--faint); box-shadow: var(--sh-2); }
+.tpl-card h3 { font-size: 14px; }
+.tpl-subj { font-size: 13px; font-weight: 600; color: var(--ink); }
+.tpl-body-prev { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.var-chip {
+  display: inline-block; padding: 0 7px;
+  background: var(--purple-bg); color: var(--purple-ink);
+  border: 1px dashed #d5cbf2; border-radius: 999px;
+  font: 600 11px/1.7 var(--font); white-space: nowrap;
+  vertical-align: 1px;
+}
+.var-val { background: #d9f3ee; color: var(--green-ink); border-radius: 4px; padding: 0 4px; font-weight: 600; }
+.tpl-body { line-height: 1.7; }
+
 /* ---- workflow builder ------------------------------------------------------------------ */
 .bld { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 14px; align-items: start; }
 .bld-pal { padding: 14px; display: grid; gap: 8px; position: sticky; top: calc(var(--nav-h) + 12px); }

@@ -310,5 +310,50 @@ window.HSV_DATA.saas = {
     { id: 'r4', name: 'Trial-to-paid funnel',          desc: 'How accounts move from trial to a signed contract.',             type: 'funnel' },
     { id: 'r5', name: 'Pipeline by rep',               desc: 'Open deal value carried by each account executive.',             type: 'ownerbar' },
     { id: 'r6', name: 'Support load by category',      desc: 'What customers ask for help with most.',                         type: 'catbar' }
+  ],
+
+  /* what we sell — powers the quote builder */
+  catalog: [
+    { id: 'p1', name: 'Starter plan — annual',                 price: 588,   unit: 'per workspace' },
+    { id: 'p2', name: 'Growth plan — per seat, annual',        price: 1440,  unit: 'per seat' },
+    { id: 'p3', name: 'Scale plan — per seat, annual',         price: 2160,  unit: 'per seat' },
+    { id: 'p4', name: 'Enterprise seat — 2-year prepay',       price: 2400,  unit: 'per seat' },
+    { id: 'p5', name: 'Enterprise platform fee',               price: 24000, unit: 'per contract' },
+    { id: 'p6', name: 'Onboarding & migration package',        price: 6500,  unit: 'one-time' },
+    { id: 'p7', name: 'SSO & SCIM add-on',                     price: 3500,  unit: 'per year' },
+    { id: 'p8', name: 'Historical data import',                price: 2500,  unit: 'one-time' }
+  ],
+  quotes: [
+    { id: 'q1', name: 'Shopwell Labs — Enterprise, 60 seats × 2 years', dealId: 'd2', contactId: 'c2', status: 'Sent',
+      created: '2026-06-12', expires: '2026-07-31', discount: 0,
+      note: 'Two-year term, Frankfurt hosting, SLA rider attached. Security review addendum included.',
+      items: [ { p: 'p5', qty: 1 }, { p: 'p4', qty: 60 } ] },
+    { id: 'q2', name: 'Fintrella — Scale plan, 25 seats', dealId: 'd1', contactId: 'c1', status: 'Sent',
+      created: '2026-07-01', expires: '2026-07-12', discount: 0,
+      note: 'Includes the Amplitude comparison commitments discussed on the deep-dive call.',
+      items: [ { p: 'p3', qty: 25 } ] },
+    { id: 'q3', name: 'Praxa Health — Growth, 8 seats', dealId: 'd4', contactId: 'c4', status: 'Accepted',
+      created: '2026-06-25', expires: '2026-07-09', accepted: '2026-07-03', discount: 20,
+      note: 'BAA attached. Early-stage discount applied as agreed.',
+      items: [ { p: 'p2', qty: 8 } ] }
+  ],
+
+  /* email templates — product voice, reusable */
+  templates: [
+    { id: 'e1', kind: 'Welcome',       name: 'Trial day 1 — first event',       uses: 964, edited: '2026-06-10',
+      subject: '{{first name}}, send your first event in 10 minutes',
+      body: 'Hi {{first name}},\n\nWelcome to CloudMetric! The fastest way to feel the value: copy one snippet, paste it into your app, and watch live data appear.\n\nYour snippet is waiting on the setup page. Stuck anywhere? Reply — a human answers, usually within the hour.\n\n{{owner}}\nCloudMetric' },
+    { id: 'e2', kind: 'Reminder',      name: 'Trial ending — keep your work',   uses: 505, edited: '2026-06-28',
+      subject: 'Your trial ends soon, {{first name}} — your dashboards stay',
+      body: 'Hi {{first name}},\n\nYour CloudMetric trial wraps up shortly. Everything you built — dashboards, funnels, saved views — stays exactly as-is the moment you pick a plan.\n\nQuestions about pricing or seats? Reply and we’ll sort it out on one short call.\n\n{{owner}}' },
+    { id: 'e3', kind: 'Follow-up',     name: 'Demo follow-up with recording',   uses: 148, edited: '2026-05-20',
+      subject: 'Thanks for the demo, {{first name}} — recording inside',
+      body: 'Hi {{first name}},\n\nGreat questions today. The recording and the comparison sheet we promised are linked below.\n\nNext step when you’re ready: a two-week pilot with your real data — we handle the setup.\n\n{{owner}}\nCloudMetric' },
+    { id: 'e4', kind: 'Re-engagement', name: 'Usage dip — offer a hand',        uses: 37,  edited: '2026-05-18',
+      subject: 'Anything we can help with at {{company}}?',
+      body: 'Hi {{first name}},\n\nNoticed the team’s usage dipped this month — that’s usually a re-org, a busy sprint, or something we could make easier.\n\nIf it’s the last one: a free 30-minute re-onboarding usually fixes it. Want a slot?\n\n{{owner}}' },
+    { id: 'e5', kind: 'Renewal',       name: 'Renewal — 60 days out',           uses: 41,  edited: '2026-06-30',
+      subject: 'Renewal ahead for {{company}} — zero surprises',
+      body: 'Hi {{first name}},\n\nYour renewal is about 60 days out, so here’s everything upfront: current usage, seat count, and next year’s pricing — no games.\n\nWant to adjust seats or add SSO before renewal? Now’s the cheapest moment.\n\n{{owner}}\nCloudMetric' }
   ]
 };

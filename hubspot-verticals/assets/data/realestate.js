@@ -309,5 +309,50 @@ window.HSV_DATA.realestate = {
     { id: 'r4', name: 'Lead-to-closing funnel',        desc: 'How leads progress from first contact to a closed transaction.', type: 'funnel' },
     { id: 'r5', name: 'Pipeline by agent',             desc: 'Open transaction value carried by each agent.',                 type: 'ownerbar' },
     { id: 'r6', name: 'Issue load by category',        desc: 'Where transaction problems come up most often.',                type: 'catbar' }
+  ],
+
+  /* listing services — powers the proposal (quote) builder */
+  catalog: [
+    { id: 'p1', name: 'Listing marketing package',            price: 1800, unit: 'per listing' },
+    { id: 'p2', name: 'Professional photography + floor plan', price: 450, unit: 'per shoot' },
+    { id: 'p3', name: 'Drone & twilight shoot',               price: 350,  unit: 'per shoot' },
+    { id: 'p4', name: 'Home staging — 60 days',               price: 3000, unit: 'per listing' },
+    { id: 'p5', name: 'Premium video tour',                   price: 900,  unit: 'per listing' },
+    { id: 'p6', name: 'Open-house programme',                 price: 600,  unit: 'per weekend' },
+    { id: 'p7', name: 'Deep clean & punch-list crew',         price: 750,  unit: 'per visit' },
+    { id: 'p8', name: 'Pre-listing inspection',               price: 425,  unit: 'per listing' }
+  ],
+  quotes: [
+    { id: 'q1', name: 'Dune Ridge — listing proposal', dealId: 'd2', contactId: 'c2', status: 'Sent',
+      created: '2026-07-04', expires: '2026-07-20', discount: 0,
+      note: 'Beach-house launch package: staged, filmed, and open two consecutive weekends.',
+      items: [ { p: 'p4', qty: 1 }, { p: 'p2', qty: 1 }, { p: 'p3', qty: 1 }, { p: 'p5', qty: 1 }, { p: 'p1', qty: 1 }, { p: 'p6', qty: 1 } ] },
+    { id: 'q2', name: 'LeBlanc family home — gentle-start package', dealId: 'd11', contactId: 'c10', status: 'Draft',
+      created: '2026-07-02', expires: '2026-08-31', discount: 0,
+      note: 'Paced for an August listing after the estate cleanout. No pressure, no rush.',
+      items: [ { p: 'p1', qty: 1 }, { p: 'p2', qty: 1 }, { p: 'p7', qty: 1 } ] },
+    { id: 'q3', name: 'Marsh Landing — model home programme', dealId: 'd9', contactId: 'c5', status: 'Accepted',
+      created: '2026-04-20', expires: '2026-05-20', accepted: '2026-04-28', discount: 0,
+      note: 'Phase 2 launch: doubled marketing, four open-house weekends, drone site film.',
+      items: [ { p: 'p1', qty: 2 }, { p: 'p5', qty: 1 }, { p: 'p6', qty: 4 }, { p: 'p3', qty: 1 } ] }
+  ],
+
+  /* email templates — the brokerage's voice */
+  templates: [
+    { id: 'e1', kind: 'Welcome',       name: 'New buyer welcome',            uses: 574, edited: '2026-06-15',
+      subject: 'Welcome aboard, {{first name}} — here’s how the search works',
+      body: 'Hi {{first name}},\n\nGreat to have you with Harborline. From here: you’ll get listing alerts the moment matches hit the market, and {{owner}} is your person for tours — evenings and weekends included.\n\nOne ask: tell us when a listing feels wrong, not just when it feels right. It sharpens the search fast.\n\nTalk soon,\n{{owner}}' },
+    { id: 'e2', kind: 'Alert',         name: 'New listing match',            uses: 2840, edited: '2026-07-01',
+      subject: 'New in your search area, {{first name}}',
+      body: 'Hi {{first name}},\n\nA new listing just matched your saved search — photos and details below. Homes in this band have been moving in under two weeks.\n\nWant to see it? Reply with a day and time; we’ll handle the rest.\n\n{{owner}}\nHarborline Realty' },
+    { id: 'e3', kind: 'Follow-up',     name: 'After the tour',               uses: 310, edited: '2026-05-22',
+      subject: 'Thoughts on today’s homes, {{first name}}?',
+      body: 'Hi {{first name}},\n\nThanks for touring with us today. While it’s fresh: which one would you be sad to lose?\n\nIf the answer is “none of them”, that’s useful too — it tells us exactly what to cut from the next round.\n\n{{owner}}' },
+    { id: 'e4', kind: 'Milestone',     name: 'Under contract — what happens next', uses: 87, edited: '2026-06-10',
+      subject: 'You’re under contract, {{first name}} 🎉 — the road from here',
+      body: 'Hi {{first name}},\n\nCongratulations — offer accepted! Between now and closing there are four checkpoints: inspection, appraisal, financing, final walkthrough.\n\nWe track every deadline and nudge you only when something actually needs you. Your timeline is attached.\n\n{{owner}}\nHarborline Realty' },
+    { id: 'e5', kind: 'Anniversary',   name: 'Home anniversary note',        uses: 96, edited: '2026-05-01',
+      subject: 'One year at home, {{first name}} 🏡',
+      body: 'Hi {{first name}},\n\nHappy home-iversary! A year already.\n\nAttached is a quick, no-strings update on what your home is worth today — neighbours’ sales included. And if anyone you know is thinking of moving, you know where we are.\n\nWarmly,\n{{owner}}' }
   ]
 };

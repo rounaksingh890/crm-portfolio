@@ -309,5 +309,50 @@ window.HSV_DATA.medical = {
     { id: 'r4', name: 'Patient journey funnel',        desc: 'How enquiries move from first contact to an accepted plan.',   type: 'funnel' },
     { id: 'r5', name: 'Care plans by team member',     desc: 'Open pipeline value owned by each person.',                    type: 'ownerbar' },
     { id: 'r6', name: 'Ticket load by category',       desc: 'Which kinds of issues the front desk handles most.',           type: 'catbar' }
+  ],
+
+  /* what we sell — powers the quote builder */
+  catalog: [
+    { id: 'p1', name: 'Initial assessment',                     price: 95,   unit: 'per visit' },
+    { id: 'p2', name: 'Follow-up physio session',               price: 70,   unit: 'per session' },
+    { id: 'p3', name: 'Physio block — 8 sessions + home plan',  price: 1345, unit: 'per block' },
+    { id: 'p4', name: 'Dermatology consult',                    price: 140,  unit: 'per visit' },
+    { id: 'p5', name: 'Allergy testing panel',                  price: 640,  unit: 'per panel' },
+    { id: 'p6', name: 'Travel vaccination pack',                price: 410,  unit: 'per person' },
+    { id: 'p7', name: 'Corporate on-site clinic day',           price: 1200, unit: 'per day' },
+    { id: 'p8', name: 'Annual wellness plan',                   price: 780,  unit: 'per year' }
+  ],
+  quotes: [
+    { id: 'q1', name: 'TravisTech — employee health programme', dealId: 'd2', contactId: 'c5', status: 'Sent',
+      created: '2026-06-28', expires: '2026-07-25', discount: 0,
+      note: 'Covers 240 employees across two office sites, scheduling included.',
+      items: [ { p: 'p7', qty: 32 } ] },
+    { id: 'q2', name: 'Cedar Park ISD — autumn screening days', dealId: 'd3', contactId: 'c10', status: 'Draft',
+      created: '2026-07-03', expires: '2026-08-15', discount: 0,
+      note: 'Three campuses, six days each. District PO terms accepted.',
+      items: [ { p: 'p7', qty: 18 } ] },
+    { id: 'q3', name: 'Grace Holloway — knee rehab plan', dealId: 'd1', contactId: 'c1', status: 'Accepted',
+      created: '2026-03-04', expires: '2026-04-04', accepted: '2026-03-06', discount: 0,
+      note: 'Accepted at the first consult. Insurance receipts provided per session.',
+      items: [ { p: 'p1', qty: 1 }, { p: 'p3', qty: 1 } ] }
+  ],
+
+  /* email templates — the clinic's voice, reusable */
+  templates: [
+    { id: 'e1', kind: 'Welcome',       name: 'New patient welcome',           uses: 214,  edited: '2026-06-20',
+      subject: 'Welcome to BrightCare, {{first name}} — here’s what happens next',
+      body: 'Hi {{first name}},\n\nThanks for booking with us — we’re looking forward to seeing you.\n\nWhat to bring: comfortable clothes, any scan reports, and your referral letter if you have one. Parking instructions are attached.\n\nNeed to change the time? Just reply to this email.\n\n{{owner}}\nBrightCare Health' },
+    { id: 'e2', kind: 'Reminder',      name: '48-hour appointment reminder',  uses: 1240, edited: '2026-07-01',
+      subject: 'A reminder from BrightCare, {{first name}}',
+      body: 'Hi {{first name}},\n\nA quick reminder about your upcoming appointment at the clinic.\n\nRunning late or need to move it? Reply here or call the front desk — no drama either way.\n\nSee you soon,\nThe BrightCare team' },
+    { id: 'e3', kind: 'Follow-up',     name: 'Post-visit check-in',           uses: 890,  edited: '2026-05-14',
+      subject: 'How are you feeling, {{first name}}?',
+      body: 'Hi {{first name}},\n\nJust checking in after your visit — how’s everything feeling?\n\nIf anything seems off, reply and {{owner}} will call you back today. If it went well, we’d love a quick review — it genuinely helps other patients find us.\n\nTake care,\nBrightCare Health' },
+    { id: 'e4', kind: 'Re-engagement', name: 'Six months quiet',              uses: 155,  edited: '2026-05-15',
+      subject: 'It’s been a while, {{first name}} — time for a check-in?',
+      body: 'Hi {{first name}},\n\nIt’s been about six months since your last visit. A quick check-up now usually beats a bigger problem later.\n\nBook in two taps with the link below — mornings and evenings available at both clinics.\n\nWarmly,\nThe BrightCare team' },
+    { id: 'e5', kind: 'Referrer',      name: 'Referral received — doctor update', uses: 64, edited: '2026-06-05',
+      subject: 'We’ve received your referral for {{first name}}',
+      body: 'Dear colleague,\n\nThank you for referring {{first name}} to us. They’ve been contacted and offered an appointment within the week.\n\nYou’ll receive our summary letter within three working days of the first visit — by secure portal as usual.\n\nWith thanks,\nBrightCare Health · Referrals desk' }
   ]
 };

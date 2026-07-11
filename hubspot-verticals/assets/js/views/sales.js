@@ -221,13 +221,19 @@
         ${taskRows || UI.empty('check', 'No tasks attached', 'Nothing to do on this one right now.')}
       </section>`;
 
+    const dq = (D.quotes || []).filter(x => x.dealId === d.id);
+    const quoteItems = dq.map(x => UI.assocItem(HSV.href('quote', x.id), esc(x.name),
+      x.status, `<b>${HSV.money(x.items.reduce((a, it) => a + D.catalog.find(p => p.id === it.p).price * it.qty, 0) - (x.discount || 0), true)}</b>`));
     const right = `
       ${c ? UI.assocCard('Contact', [UI.assocItem(HSV.href('contact', c.id),
         `<span class="row" style="gap:8px">${UI.avatar(HSV.cName(c), HSV.owner(c.owner).color, 'av-sm')} ${esc(HSV.cName(c))}</span>`,
         esc(c.title || ''))]) : ''}
       ${co ? UI.assocCard('Company', [UI.assocItem(HSV.href('company', co.id),
         `<span class="row" style="gap:8px">${UI.avatar(co.name, HSV.hueColor(co.name), 'av-sm av-sq')} ${esc(co.name)}</span>`,
-        esc(co.industry))]) : ''}`;
+        esc(co.industry))]) : ''}
+      <section class="card assoc-card"><h3>Quotes ${UI.pill(dq.length, 't-gray')}
+        <a class="assoc-add" href="${HSV.href('qbuilder', null, { deal: d.id })}">+ New quote</a></h3>
+        ${quoteItems.join('') || '<p class="small muted" style="padding:2px 0 4px">None yet — build one in a minute.</p>'}</section>`;
 
     return `<div class="page view-in">
       ${UI.crumbs(HSV.href('deals'), t.pipelineName, d.name)}
@@ -407,4 +413,256 @@
     HSV.render();
     UI.toast('Booked — it\'s on the schedule and the dashboard');
   };
+
+  /* ==========================================================================
+     QUOTES — a price list, a paper-style document you can genuinely print
+     to PDF, and a line-item builder wired to deals.
+     ========================================================================== */
+  const product = id => HSV.D().catalog.find(p => p.id === id);
+  const qSubtotal = q => q.items.reduce((a, it) => a + product(it.p).price * it.qty, 0);
+  const qTotal = q => qSubtotal(q) - (q.discount || 0);
+  const Q_TONE = { Draft: 't-gray', Sent: 't-blue', Accepted: 't-green', Expired: 't-red' };
+
+  HSV.views.quotes = function () {
+    const D = HSV.D();
+    const qs = D.quotes;
+    const acc = qs.filter(q => q.status === 'Accepted');
+    const sent = qs.filter(q => q.status === 'Sent');
+    const kpis = [
+      { label: 'Accepted value', value: HSV.money(acc.reduce((a, q) => a + qTotal(q), 0), true), sub: acc.length + ' accepted', href: HSV.href('quotes') },
+      { label: 'Out for signature', value: HSV.money(sent.reduce((a, q) => a + qTotal(q), 0), true), sub: sent.length + ' sent', href: HSV.href('quotes') },
+      { label: 'Drafts', value: qs.filter(q => q.status === 'Draft').length, sub: 'not sent yet', href: HSV.href('quotes') },
+    ].map(UI.kpi).join('');
+
+    const table = UI.table(
+      ['Quote', 'Status', 'Amount', 'For', 'Created', 'Valid until'],
+      qs.map(q => {
+        const c = HSV.contact(q.contactId);
+        return { href: HSV.href('quote', q.id), cells: [
+          `<span class="cell-main"><span>${esc(q.name)}${q.custom ? ' ' + UI.pill('built this session', 't-orange') : ''}<small>QUO-${esc(q.id.replace('q', '').padStart ? String(q.id.replace('q', '')).padStart(4, '0') : q.id)}</small></span></span>`,
+          UI.pill(q.status, Q_TONE[q.status] || 't-gray'),
+          `<b class="num">${HSV.money(qTotal(q))}</b>`,
+          c ? esc(HSV.cName(c)) : '—',
+          esc(HSV.fmtDate(q.created)),
+          esc(HSV.fmtDate(q.expires)),
+        ] };
+      }), { emptyIcon: 'doc' });
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Quotes<span class="ph-count">' + qs.length + ' quotes</span>',
+        'Priced from the same catalog every time — open one to see the actual document, or build a new one line by line.',
+        `<a class="btn btn-primary" href="${HSV.href('qbuilder')}">Create quote</a>`)}
+      <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));max-width:560px">${kpis}</div>
+      ${table}
+    </div>`;
+  };
+
+  HSV.views.quote = function () {
+    const q = (HSV.D().quotes || []).find(x => x.id === HSV.state.id);
+    if (!q) return HSV.notFound('quotes', 'Quotes', 'That quote doesn’t exist');
+    const D = HSV.D(), c = HSV.contact(q.contactId), d = q.dealId ? HSV.deal(q.dealId) : null;
+    const owner = c ? HSV.owner(c.owner) : D.owners[0];
+
+    const lines = q.items.map(it => {
+      const p = product(it.p);
+      return `<tr><td>${esc(p.name)}<small style="display:block;color:var(--muted)">${esc(p.unit)}</small></td>
+        <td class="td-num">${it.qty}</td>
+        <td class="td-num">${HSV.money(p.price)}</td>
+        <td class="td-num"><b>${HSV.money(p.price * it.qty)}</b></td></tr>`;
+    }).join('');
+
+    const statusBtns = q.status === 'Draft'
+      ? `<button class="btn btn-primary" data-action="quote-status" data-id="${q.id}" data-to="Sent">Mark as sent</button>`
+      : q.status === 'Sent'
+        ? `<button class="btn btn-primary" data-action="quote-status" data-id="${q.id}" data-to="Accepted">Mark accepted ✓</button>`
+        : '';
+
+    const left = `
+      <section class="card props-card">
+        <h3>Quote details</h3>
+        <dl class="props">
+          <div><dt>Status</dt><dd>${UI.pill(q.status, Q_TONE[q.status])}${q.accepted ? ' <small class="muted">accepted ' + esc(HSV.fmtDate(q.accepted)) + '</small>' : ''}</dd></div>
+          <div><dt>Total</dt><dd class="b" style="font-size:16px">${HSV.money(qTotal(q))}</dd></div>
+          <div><dt>Created</dt><dd>${esc(HSV.fmtDate(q.created))}</dd></div>
+          <div><dt>Valid until</dt><dd>${esc(HSV.fmtDate(q.expires))} (${esc(HSV.rel(q.expires))})</dd></div>
+          <div><dt>Prepared by</dt><dd>${UI.ownerChip(owner.id)}</dd></div>
+        </dl>
+      </section>
+      ${c ? UI.assocCard('Contact', [UI.assocItem(HSV.href('contact', c.id),
+        `<span class="row" style="gap:8px">${UI.avatar(HSV.cName(c), HSV.owner(c.owner).color, 'av-sm')} ${esc(HSV.cName(c))}</span>`, esc(c.email))]) : ''}
+      ${d ? UI.assocCard(D.terms.deal, [UI.assocItem(HSV.href('deal', d.id), esc(d.name),
+        UI.stagePill(HSV.dealStageId(d)), `<b>${HSV.money(d.amount, true)}</b>`)]) : ''}`;
+
+    const paper = `
+      <div class="quote-paper" id="quote-paper">
+        <div class="qp-head">
+          <div class="qp-brand"><span class="qp-mark" style="background:${D.accent}">${esc(D.brand[0])}</span>
+            <div><b>${esc(D.brand)}</b><span>${esc(D.industryLabel)}</span></div></div>
+          <div class="qp-meta"><b>QUOTE</b><span>QUO-${esc(String(q.id).replace('q', ''))}</span>
+            <span>${esc(HSV.fmtDate(q.created))}</span></div>
+        </div>
+        <div class="qp-parties">
+          <div><small>Prepared for</small><b>${c ? esc(HSV.cName(c)) : '—'}</b>${c && c.companyId ? `<span>${esc(HSV.company(c.companyId).name)}</span>` : ''}${c ? `<span>${esc(c.email)}</span>` : ''}</div>
+          <div><small>Prepared by</small><b>${esc(owner.name)}</b><span>${esc(owner.role)}</span><span>${esc(D.brand)}</span></div>
+        </div>
+        <table class="qp-table">
+          <thead><tr><th>Item</th><th class="td-num">Qty</th><th class="td-num">Unit</th><th class="td-num">Amount</th></tr></thead>
+          <tbody>${lines}</tbody>
+        </table>
+        <div class="qp-totals">
+          <div><span>Subtotal</span><b>${HSV.money(qSubtotal(q))}</b></div>
+          ${q.discount ? `<div><span>Discount</span><b>− ${HSV.money(q.discount)}</b></div>` : ''}
+          <div class="qp-grand"><span>Total</span><b>${HSV.money(qTotal(q))}</b></div>
+        </div>
+        ${q.note ? `<p class="qp-note">${esc(q.note)}</p>` : ''}
+        <div class="qp-foot">
+          <span>Valid until ${esc(HSV.fmtDate(q.expires))} · Sample document, fictional data</span>
+          <span class="qp-sign">Signature ______________________</span>
+        </div>
+      </div>`;
+
+    return `<div class="page view-in">
+      ${UI.crumbs(HSV.href('quotes'), 'Quotes', q.name)}
+      ${UI.pageHead(esc(q.name), 'This is the document the customer sees — and the print button makes a real PDF of it.',
+        `${statusBtns}
+         <button class="btn" data-action="quote-print">🖨 Print / save PDF</button>
+         <button class="btn" data-action="quote-dup" data-id="${q.id}">Duplicate & edit</button>`)}
+      <div class="detail" style="grid-template-columns:300px minmax(0,1fr)">
+        <div class="d-col">${left}</div>
+        <div class="d-col">${paper}</div>
+      </div>
+    </div>`;
+  };
+
+  HSV.actions['quote-status'] = function (el) {
+    const q = HSV.D().quotes.find(x => x.id === el.dataset.id);
+    q.status = el.dataset.to;
+    if (q.status === 'Accepted') q.accepted = HSV.TODAY;
+    HSV.render();
+    UI.toast(q.status === 'Accepted' ? 'Accepted 🎉 — the quotes total moved with it' : 'Marked as sent');
+  };
+  HSV.actions['quote-print'] = function () { window.print(); };
+  HSV.actions['quote-dup'] = function (el) {
+    const q = HSV.D().quotes.find(x => x.id === el.dataset.id);
+    qdraft = { name: q.name + ' (copy)', contactId: q.contactId, dealId: q.dealId || '',
+      expires: q.expires, discount: q.discount || 0, items: q.items.map(it => ({ p: it.p, qty: it.qty })) };
+    qdraftFor = 'dup';
+    HSV.go(HSV.href('qbuilder'));
+  };
+
+  /* ---- the quote builder ------------------------------------------------------ */
+  let qdraft = null, qdraftFor = undefined;
+  function initQ() {
+    const key = HSV.state.portal + '|' + (HSV.state.q.deal || 'new');
+    if (qdraftFor === 'dup') { qdraftFor = key; return; }
+    if (qdraftFor === key && qdraft) return;
+    qdraftFor = key;
+    const D = HSV.D();
+    const dealId = HSV.state.q.deal || '';
+    const d = dealId ? HSV.deal(dealId) : null;
+    const plus30 = new Date(HSV.dt(HSV.TODAY).getTime() + 30 * 864e5).toISOString().slice(0, 10);
+    qdraft = { name: d ? 'Quote — ' + d.name : '', contactId: d && d.contactId ? d.contactId : D.contacts[0].id,
+      dealId, expires: plus30, discount: 0, items: [{ p: D.catalog[0].id, qty: 1 }] };
+  }
+  function qDraftTotals() {
+    const D = HSV.D();
+    const sub = qdraft.items.reduce((a, it) => a + D.catalog.find(p => p.id === it.p).price * it.qty, 0);
+    return { sub, total: sub - (qdraft.discount || 0) };
+  }
+  function syncQ() {
+    document.querySelectorAll('[data-qi-item]').forEach(sel => { qdraft.items[+sel.dataset.qiItem].p = sel.value; });
+    document.querySelectorAll('[data-qi-qty]').forEach(inp => { qdraft.items[+inp.dataset.qiQty].qty = Math.max(1, +inp.value || 1); });
+    const g = k => document.querySelector('[data-qb-' + k + ']');
+    if (g('name')) qdraft.name = g('name').value;
+    if (g('contact')) qdraft.contactId = g('contact').value;
+    if (g('deal')) qdraft.dealId = g('deal').value;
+    if (g('expires')) qdraft.expires = g('expires').value;
+    if (g('discount')) qdraft.discount = Math.max(0, +g('discount').value || 0);
+  }
+
+  HSV.views.qbuilder = function () {
+    initQ();
+    const D = HSV.D(), t = qDraftTotals();
+    const rows = qdraft.items.map((it, i) => {
+      const p = D.catalog.find(x => x.id === it.p);
+      return `<div class="qb-row">
+        <select class="sel" data-qi-item="${i}" aria-label="Line item">${D.catalog.map(x =>
+          `<option value="${x.id}" ${x.id === it.p ? 'selected' : ''}>${esc(x.name)} — ${HSV.money(x.price)} ${esc(x.unit)}</option>`).join('')}</select>
+        <input class="inp qb-qty" type="number" min="1" value="${it.qty}" data-qi-qty="${i}" aria-label="Quantity">
+        <b class="qb-line num" data-qb-line="${i}">${HSV.money(p.price * it.qty)}</b>
+        <button class="bld-btn del" data-action="qb-del" data-i="${i}" aria-label="Remove line">✕</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="page view-in">
+      ${UI.crumbs(HSV.href('quotes'), 'Quotes', 'New quote')}
+      ${UI.pageHead('Build a quote', 'Every line comes from the price list, so quotes are consistent no matter who writes them. The totals follow your keystrokes.',
+        `<button class="btn btn-primary" data-action="qb-save">Save quote</button>`)}
+      <div class="card bld-canvas" style="max-width:820px">
+        <div class="bld-meta" style="grid-template-columns:1fr 1fr">
+          <label>Quote name<input class="inp" data-qb-name value="${esc(qdraft.name)}" placeholder="e.g. Spring package — Acme"></label>
+          <label>For<select class="sel" data-qb-contact style="width:100%">${D.contacts.map(c =>
+            `<option value="${c.id}" ${c.id === qdraft.contactId ? 'selected' : ''}>${esc(HSV.cName(c))}</option>`).join('')}</select></label>
+          <label>Linked ${esc(D.terms.deal.toLowerCase())} (optional)<select class="sel" data-qb-deal style="width:100%">
+            <option value="">None</option>${D.deals.map(d =>
+            `<option value="${d.id}" ${d.id === qdraft.dealId ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></label>
+          <label>Valid until<input class="inp" type="date" data-qb-expires value="${esc(qdraft.expires)}"></label>
+        </div>
+        <div class="qb-rows">${rows}</div>
+        <button class="btn btn-sm" data-action="qb-add" style="margin-top:10px">${UI.icon('plus')} Add a line</button>
+        <div class="qb-totals">
+          <label class="qb-disc">Discount $<input class="inp" type="number" min="0" data-qb-discount value="${qdraft.discount || 0}"></label>
+          <div class="qb-sums">
+            <div><span>Subtotal</span><b data-qb-sub>${HSV.money(t.sub)}</b></div>
+            <div class="grand"><span>Total</span><b data-qb-total>${HSV.money(t.total)}</b></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  HSV.actions['qb-add'] = function () { syncQ(); qdraft.items.push({ p: HSV.D().catalog[0].id, qty: 1 }); HSV.render(); };
+  HSV.actions['qb-del'] = function (el) {
+    syncQ();
+    if (qdraft.items.length <= 1) { UI.toast('A quote needs at least one line'); return; }
+    qdraft.items.splice(+el.dataset.i, 1);
+    HSV.render();
+  };
+  HSV.actions['qb-save'] = function () {
+    syncQ();
+    const D = HSV.D();
+    if (!qdraft.name.trim()) {
+      qdraft.name = 'Quote — ' + HSV.cName(HSV.contact(qdraft.contactId));
+    }
+    const q = { id: 'q' + Date.now(), name: qdraft.name.trim(), dealId: qdraft.dealId || null,
+      contactId: qdraft.contactId, status: 'Draft', created: HSV.TODAY, expires: qdraft.expires,
+      discount: qdraft.discount || 0, custom: true,
+      note: 'Built during this sample session — refresh the page and the sample resets.',
+      items: qdraft.items.map(it => ({ p: it.p, qty: it.qty })) };
+    D.quotes.unshift(q);
+    qdraft = null; qdraftFor = undefined;
+    HSV.go(HSV.href('quote', q.id));
+    UI.toast('Quote saved as a draft — there\'s the document');
+  };
+
+  /* live totals while typing in the builder */
+  document.addEventListener('input', function (e) {
+    if (!qdraft || !e.target.matches) return;
+    if (e.target.matches('[data-qi-qty], [data-qb-discount]')) {
+      syncQ();
+      const D = HSV.D(), t = qDraftTotals();
+      qdraft.items.forEach((it, i) => {
+        const el = document.querySelector('[data-qb-line="' + i + '"]');
+        if (el) el.textContent = HSV.money(D.catalog.find(p => p.id === it.p).price * it.qty);
+      });
+      const sub = document.querySelector('[data-qb-sub]'), tot = document.querySelector('[data-qb-total]');
+      if (sub) sub.textContent = HSV.money(t.sub);
+      if (tot) tot.textContent = HSV.money(t.total);
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (!qdraft || !e.target.matches || !e.target.matches('[data-qi-item]')) return;
+    syncQ();
+    HSV.render();
+  });
 })();

@@ -497,4 +497,134 @@
     if (!draft) return;
     if (e.target.matches && e.target.matches('[data-bld-text], [data-bld-name], [data-bld-goal]')) syncTexts();
   });
+
+  /* ==========================================================================
+     EMAIL TEMPLATES — the portal's voice as reusable emails, with variable
+     chips and a live "preview with a real contact" substitute.
+     ========================================================================== */
+  const VAR_SAMPLES = { day: 'Friday', time: '10:00', location: 'Downtown' };
+  function tplRender(text, c) {
+    return esc(text).replace(/\{\{([\w ]+)\}\}/g, function (m, name) {
+      const key = name.trim().toLowerCase();
+      if (!c) return '<span class="var-chip">' + esc(name.trim()) + '</span>';
+      let val = null;
+      if (key === 'first name') val = c.first;
+      else if (key === 'last name') val = c.last;
+      else if (key === 'company') val = c.companyId ? HSV.company(c.companyId).name : HSV.D().brand;
+      else if (key === 'owner') val = HSV.owner(c.owner).name.split(' ')[0];
+      else if (VAR_SAMPLES[key]) val = VAR_SAMPLES[key];
+      return val ? '<mark class="var-val">' + esc(val) + '</mark>' : '<span class="var-chip">' + esc(name.trim()) + '</span>';
+    });
+  }
+
+  HSV.views.templates = function () {
+    const D = HSV.D();
+    const cards = D.templates.map(t => `
+      <div class="card tpl-card" data-href="${HSV.href('template', t.id)}" tabindex="0">
+        <div class="wf-top"><h3>${esc(t.name)}</h3>
+          ${t.custom ? UI.pill('built this session', 't-orange') : ''}
+          ${UI.pill(t.kind, 't-purple')}</div>
+        <p class="tpl-subj">${tplRender(t.subject, null)}</p>
+        <p class="tpl-body-prev">${tplRender(t.body.slice(0, 120), null)}…</p>
+        <div class="wf-nums"><span><b>${t.uses.toLocaleString('en-US')}</b>times used</span>
+          <span><b>${esc(HSV.fmtDate(t.edited))}</b>last edited</span></div>
+      </div>`).join('');
+
+    return `<div class="page view-in">
+      ${UI.pageHead('Email templates<span class="ph-count">' + D.templates.length + ' templates</span>',
+        'One agreed voice, reused everywhere. The chips are variables — open a template and preview it with a real contact\'s details filled in.',
+        `<button class="btn btn-primary" data-action="tpl-create-open">Create template</button>`)}
+      <div class="rep-grid">${cards}</div>
+    </div>`;
+  };
+
+  HSV.views.template = function () {
+    const D = HSV.D(), q = HSV.state.q;
+    const t = D.templates.find(x => x.id === HSV.state.id);
+    if (!t) return HSV.notFound('templates', 'Email templates', 'That template doesn’t exist');
+    const c = q.c ? HSV.contact(q.c) : null;
+
+    const left = `
+      <section class="card props-card">
+        <h3>Template details <button class="assoc-add" data-action="tpl-edit-open" data-id="${t.id}">Edit</button></h3>
+        <dl class="props">
+          <div><dt>Type</dt><dd>${UI.pill(t.kind, 't-purple')}</dd></div>
+          <div><dt>Times used</dt><dd class="b">${t.uses.toLocaleString('en-US')}</dd></div>
+          <div><dt>Last edited</dt><dd>${esc(HSV.fmtDate(t.edited))}</dd></div>
+        </dl>
+      </section>
+      <section class="card props-card">
+        <h3>Preview with real data</h3>
+        <p class="small muted" style="margin-bottom:8px">Pick a person and watch every variable fill itself in.</p>
+        <select class="sel" data-qkey="c" style="width:100%">
+          <option value="">Show the variables</option>
+          ${D.contacts.map(x => `<option value="${x.id}" ${q.c === x.id ? 'selected' : ''}>${esc(HSV.cName(x))}</option>`).join('')}
+        </select>
+      </section>`;
+
+    const centre = `
+      <section class="card tl-card">
+        <h3>The email${c ? ' — as ' + esc(c.first) + ' would receive it' : ' — with its variables showing'}</h3>
+        <div class="email-mock" style="margin-top:10px">
+          <div class="em-head"><span>From: ${esc(D.brand)} &lt;hello@${esc(D.brand.toLowerCase().replace(/[^a-z]/g, ''))}.com&gt;</span>
+            <b>${tplRender(t.subject, c)}</b></div>
+          <div class="em-body tpl-body">${tplRender(t.body, c).replace(/\n/g, '<br>')}</div>
+        </div>
+        <p class="small muted" style="margin-top:12px">Chips are variables the automation fills at send time; highlighted words are this contact's real values.</p>
+      </section>`;
+
+    return `<div class="page view-in">
+      ${UI.crumbs(HSV.href('templates'), 'Email templates', t.name)}
+      <div class="detail" style="grid-template-columns:300px minmax(0,1fr)">
+        <div class="d-col">${left}</div>
+        <div class="d-col">${centre}</div>
+      </div>
+    </div>`;
+  };
+
+  HSV.actions['tpl-create-open'] = function () {
+    UI.modal('Create email template', `
+      <div class="form-grid">
+        <label>Name<input class="inp" id="tp-name" placeholder="e.g. Quote follow-up"></label>
+        <label>Type<input class="inp" id="tp-kind" placeholder="e.g. Follow-up" value="Follow-up"></label>
+        <label class="wide">Subject<input class="inp" id="tp-subject" placeholder="Use {{first name}} anywhere" value="Quick follow-up, {{first name}}"></label>
+        <label class="wide">Body<textarea class="txa" id="tp-body" rows="6">Hi {{first name}},
+
+Just following up on our last conversation — is there anything you need from {{owner}} to move forward?
+
+Reply any time,
+The team</textarea></label>
+      </div>
+      <p class="small muted">Variables you can use: {{first name}}, {{last name}}, {{company}}, {{owner}}.</p>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="tpl-create-save">Create template</button>`);
+  };
+  HSV.actions['tpl-create-save'] = function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    if (!v('tp-name').trim()) { document.getElementById('tp-name').focus(); return; }
+    const t = { id: 'e' + Date.now(), kind: v('tp-kind').trim() || 'Custom', name: v('tp-name').trim(),
+      uses: 0, edited: HSV.TODAY, custom: true, subject: v('tp-subject'), body: v('tp-body') };
+    HSV.D().templates.unshift(t);
+    UI.closeModal();
+    HSV.go(HSV.href('template', t.id));
+    UI.toast('Template created — pick a contact to preview it filled in');
+  };
+  HSV.actions['tpl-edit-open'] = function (el) {
+    const t = HSV.D().templates.find(x => x.id === el.dataset.id);
+    UI.modal('Edit — ' + t.name, `
+      <label>Subject<input class="inp" id="tp-subject" value="${esc(t.subject)}"></label>
+      <label>Body<textarea class="txa" id="tp-body" rows="9">${esc(t.body)}</textarea></label>
+      <p class="small muted">Variables: {{first name}}, {{last name}}, {{company}}, {{owner}}.</p>`,
+      `<button class="btn" data-action="close-modal">Cancel</button>
+       <button class="btn btn-primary" data-action="tpl-edit-save" data-id="${t.id}">Save changes</button>`);
+  };
+  HSV.actions['tpl-edit-save'] = function (el) {
+    const t = HSV.D().templates.find(x => x.id === el.dataset.id);
+    t.subject = document.getElementById('tp-subject').value;
+    t.body = document.getElementById('tp-body').value;
+    t.edited = HSV.TODAY;
+    UI.closeModal();
+    HSV.render();
+    UI.toast('Saved — every future send uses your wording');
+  };
 })();

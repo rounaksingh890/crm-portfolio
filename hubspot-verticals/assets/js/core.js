@@ -235,6 +235,10 @@
       .map(g => ({ label: g.name, sub: g.subject, end: g.status, href: HSV.href('campaign', g.id), icon: 'send' })));
     push('Automations', D.workflows.filter(w => hit(w.name) || hit(w.trigger))
       .map(w => ({ label: w.name, sub: w.trigger, end: HSV.wfOn(w) ? 'On' : 'Off', href: HSV.href('workflow', w.id), icon: 'bolt' })));
+    if (D.quotes) push('Quotes', D.quotes.filter(x => hit(x.name))
+      .map(x => ({ label: x.name, sub: 'Quote for ' + HSV.cName(HSV.contact(x.contactId)), end: x.status, href: HSV.href('quote', x.id), icon: 'doc' })));
+    if (D.templates) push('Email templates', D.templates.filter(t => hit(t.name) || hit(t.subject))
+      .map(t => ({ label: t.name, sub: t.subject.replace(/\{\{|\}\}/g, ''), end: t.kind, href: HSV.href('template', t.id), icon: 'mail' })));
     return groups;
   };
 

@@ -308,5 +308,50 @@ window.HSV_DATA.ecommerce = {
     { id: 'r4', name: 'Wholesale pipeline funnel',     desc: 'How wholesale enquiries become fulfilled orders.',               type: 'funnel' },
     { id: 'r5', name: 'Pipeline by account owner',     desc: 'Open order value carried by each team member.',                  type: 'ownerbar' },
     { id: 'r6', name: 'Support load by category',      desc: 'What customers contact us about most.',                          type: 'catbar' }
+  ],
+
+  /* the wholesale price list — powers the quote builder */
+  catalog: [
+    { id: 'p1', name: 'Ridgeline 2P tent — wholesale',        price: 285, unit: 'per unit' },
+    { id: 'p2', name: 'Guide shell jacket — wholesale',       price: 375, unit: 'per unit' },
+    { id: 'p3', name: 'Youth daypack — wholesale',            price: 37,  unit: 'per unit' },
+    { id: 'p4', name: 'Rental-fleet pack — reinforced',       price: 165, unit: 'per unit' },
+    { id: 'p5', name: 'Trail-running vest — wholesale',       price: 82,  unit: 'per unit' },
+    { id: 'p6', name: 'Field repair kit',                     price: 18,  unit: 'per unit' },
+    { id: 'p7', name: 'Trail 30 sleeping bag — wholesale',    price: 78,  unit: 'per unit' },
+    { id: 'p8', name: 'Freight — per pallet',                 price: 420, unit: 'per pallet' }
+  ],
+  quotes: [
+    { id: 'q1', name: 'Riverbend Scouts — 220 youth daypacks', dealId: 'd4', contactId: 'c8', status: 'Accepted',
+      created: '2026-06-20', expires: '2026-07-10', accepted: '2026-07-02', discount: 0,
+      note: 'Split delivery guaranteed in writing: 180 units July 8, 60 units July 16.',
+      items: [ { p: 'p3', qty: 220 } ] },
+    { id: 'q2', name: 'Basecamp Rentals — fall fleet', dealId: 'd2', contactId: 'c3', status: 'Draft',
+      created: '2026-07-01', expires: '2026-08-10', discount: 0,
+      note: 'Reinforced rental line with repair kits; freight on two pallets to Moab.',
+      items: [ { p: 'p4', qty: 120 }, { p: 'p6', qty: 120 }, { p: 'p8', qty: 2 } ] },
+    { id: 'q3', name: 'Cascade University — student programme kit', dealId: 'd3', contactId: 'c4', status: 'Sent',
+      created: '2026-06-30', expires: '2026-08-01', discount: 220,
+      note: 'On university letterhead template, tax-exempt ID shown. Education discount applied.',
+      items: [ { p: 'p7', qty: 400 }, { p: 'p3', qty: 400 }, { p: 'p8', qty: 1 } ] }
+  ],
+
+  /* email templates — the brand's voice */
+  templates: [
+    { id: 'e1', kind: 'Welcome',       name: 'New subscriber — 10% code',     uses: 2610, edited: '2026-06-01',
+      subject: 'Welcome to PeakGear, {{first name}} — your 10% is inside',
+      body: 'Hey {{first name}},\n\nWelcome to the trail family. Your 10% code is below — it works on everything, including the new Ridgeline.\n\nOne promise from us: gear emails worth opening, and never more than one a week.\n\nSee you out there,\nPeakGear' },
+    { id: 'e2', kind: 'Recovery',      name: 'Abandoned cart nudge',          uses: 5320, edited: '2026-06-25',
+      subject: 'Your gear is still waiting, {{first name}}',
+      body: 'Hey {{first name}},\n\nWe saved your cart — everything’s still there.\n\nHeads-up: a couple of the colorways you picked are moving quickly this week. No pressure, just didn’t want you to miss out.\n\nPeakGear' },
+    { id: 'e3', kind: 'VIP',           name: 'VIP early access',              uses: 480, edited: '2026-05-15',
+      subject: '48 hours early, {{first name}} — the new drop',
+      body: 'Hey {{first name}},\n\nYou’re in before everyone else — as always. The full drop is live for VIPs now; everyone else waits until Thursday.\n\nThanks for being one of ours.\n\nPeakGear' },
+    { id: 'e4', kind: 'Win-back',      name: 'Trails miss you',               uses: 3140, edited: '2026-06-10',
+      subject: 'Trails miss you, {{first name}} (here’s 15% off)',
+      body: 'Hey {{first name}},\n\nIt’s been a while. New colors, lighter fabrics, same lifetime warranty — and 15% off to say come back.\n\nIf our emails aren’t landing right anymore, tell us and we’ll adjust. Deal?\n\nPeakGear' },
+    { id: 'e5', kind: 'Wholesale',     name: 'Stockist order confirmation',   uses: 74,  edited: '2026-06-28',
+      subject: 'Order confirmed for {{company}} — timeline inside',
+      body: 'Hi {{first name}},\n\nYour order is confirmed and in the queue. Production and freight timeline attached — we flag any slip the day we see it, not the week after.\n\nQuestions on the line sheet or terms? Reply here; {{owner}} reads these directly.\n\nPeakGear Wholesale' }
   ]
 };

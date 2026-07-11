@@ -99,6 +99,13 @@
   .list-shell .toolbar { padding: 12px 12px 0; }
   .user-grid { grid-template-columns: 1fr; }
 
+  /* quotes on phones */
+  .qb-row { grid-template-columns: 1fr 64px 30px; }
+  .qb-row .qb-line { display: none; }
+  .qp-parties { gap: 18px; }
+  .qp-head { flex-direction: column; }
+  .qp-meta { text-align: left; }
+
   /* workflow builder stacks; tapping blocks replaces dragging */
   .bld { grid-template-columns: 1fr; }
   .bld-pal { position: static; grid-template-columns: 1fr 1fr; }
